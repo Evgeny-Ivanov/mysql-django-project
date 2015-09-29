@@ -17,8 +17,11 @@ from django.conf.urls import include, url
 from django.contrib import admin
 
 from MySQLProject.views import hello
+from MySQLProject.views import createdb
 
 urlpatterns = [
     url('^hello/$',hello),
+    url('^createdb/$',createdb),
     url(r'^admin/', include(admin.site.urls)),
+
 ]
