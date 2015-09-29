@@ -18,10 +18,14 @@ from django.contrib import admin
 
 from MySQLProject.views import hello
 from MySQLProject.views import createdb
+from MySQLProject.views import dropdb
+from MySQLProject.views import insertUser
 
 urlpatterns = [
     url('^hello/$',hello),
     url('^createdb/$',createdb),
+    url('^dropdb/$',dropdb),
+    url('^insertUser/$',insertUser),
     url(r'^admin/', include(admin.site.urls)),
 
 ]

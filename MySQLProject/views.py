@@ -12,7 +12,13 @@ def hello(request):
     
     #cursor.execute("CREATE TABLE buf (name VARCHAR(10) PRIMARY KEY)")
     #cursor.execute("INSERT INTO buf VALUES ('Evgeny')")
-    cursor.execute("SELECT * FROM buf") #для выполнения SQL
+    username = request.GET["username"]
+    query = '''SELECT username
+               FROM User
+               WHERE username = '%s';
+            ''' % username
+
+    cursor.execute(query) #для выполнения SQL
     #cursor.execute("DROP TABLE buf")
     #row = cursor.fetchone() #для получения результата
     row = cursor.fetchall()
@@ -22,30 +28,57 @@ def hello(request):
     responce = { "code": code, "response": row }
     responce = json.dumps(responce)
 
-    if request.method == 'POST':
-        return request.body  
+    #if request.method == 'POST':
+    #    return request.body  
+
+    return HttpResponse(responce,content_type="application/json")
+
+def insertUser(request):
+
+    username = request.GET["username"]
+    about = request.GET["about"]
+    isAnonymous = request.GET["isAnonymous"]
+    if(isAnonymous=="true"):
+        isAnonymous = True
+    else: 
+        isAnonymous = False
+    name = request.GET["name"]
+    email = request.GET["email"]
+
+    query = '''INSERT INTO User(username,about,name,email,isAnonymous) 
+               VALUES ('%s','%s','%s','%s','%d');
+            ''' % (username,about,name,email,isAnonymous,)
+
+    cursor = connection.cursor() 
+    cursor.execute(query)
+    #row = cursor.fetchall()
+
+    row = request.GET#нужно еще возвращать id 
+    code = 0
+    responce = { "code": code, "response": row }
+    responce = json.dumps(responce)
 
     return HttpResponse(responce,content_type="application/json")
 
 
 def createdb(request):
-	createUser()
-	createForum()
-	createThread()
-	createPost()
-	return HttpResponse("OK")
+    createUser()
+    createForum()
+    createThread()
+    createPost()
+    return HttpResponse("OK")
 
 
 def createForum():
     cursor = connection.cursor() 
-    query = '''CREATE TABLE Forum (forumId INT PRIMARY KEY,
-    	                           name VARCHAR(50) ,
-    	                           shortName VARCHAR(20),
-    	                           userId INT ,/*email*/
-    	                           UNIQUE (name),
-    	                           UNIQUE (shortName),
-    	                           FOREIGN KEY (userId) REFERENCES User(userId)
-    	                           );
+    query = '''CREATE TABLE Forum (forumId INT PRIMARY KEY AUTO_INCREMENT,
+                                   name VARCHAR(50) ,
+                                   shortName VARCHAR(20),
+                                   userId INT ,/*email*/
+                                   UNIQUE (name),
+                                   UNIQUE (shortName),
+                                   FOREIGN KEY (userId) REFERENCES User(userId)
+                                   );
             '''
 
     cursor.execute(query)
@@ -55,19 +88,19 @@ def createForum():
 def createPost():
     cursor = connection.cursor() 
     query = '''CREATE TABLE Post  (postId INT PRIMARY KEY,
-    	                           threadId INT,
-    	                           userId INT,
-    	                           parent INT,
-    	                           datePost DATE,
-    	                           message TEXT,
-    	                           isEdited BOOLEAN,
-    	                           isDeleted BOOLEAN,
-    	                           isSpam BOOLEAN,
-    	                           isHighlighted BOOLEAN,
-    	                           isApproved BOOLEAN,
-    	                           FOREIGN KEY (userId) REFERENCES User(userId),
-    	                           FOREIGN KEY (threadId) REFERENCES Thread(threadId)
-    	                           );
+                                   threadId INT,
+                                   userId INT,
+                                   parent INT,
+                                   datePost DATE,
+                                   message TEXT,
+                                   isEdited BOOLEAN,
+                                   isDeleted BOOLEAN,
+                                   isSpam BOOLEAN,
+                                   isHighlighted BOOLEAN,
+                                   isApproved BOOLEAN,
+                                   FOREIGN KEY (userId) REFERENCES User(userId),
+                                   FOREIGN KEY (threadId) REFERENCES Thread(threadId)
+                                   );
             '''
 
     cursor.execute(query)
@@ -75,14 +108,14 @@ def createPost():
 
 def createUser():
     cursor = connection.cursor() 
-    query = '''CREATE TABLE User  (userId INT PRIMARY KEY,
-    	                           username VARCHAR(50),
-    	                           about VARCHAR(100),
-    	                           name VARCHAR(50),
-    	                           email VARCHAR(50),
-    	                           isAnonymous BOOLEAN,
-    	                           UNIQUE (email)
-    	                           );
+    query = '''CREATE TABLE User  (userId INT PRIMARY KEY AUTO_INCREMENT,
+                                   username VARCHAR(50),
+                                   about VARCHAR(100),
+                                   name VARCHAR(50),
+                                   email VARCHAR(50),
+                                   isAnonymous BOOLEAN,
+                                   UNIQUE (email)
+                                   );
             '''
 
     cursor.execute(query)
@@ -92,23 +125,54 @@ def createUser():
 def createThread():
     cursor = connection.cursor() 
     query = '''CREATE TABLE Thread (threadId INT PRIMARY KEY,
-    	                            forumId INT,
-    	                            userId INT,
-    	                            title VARCHAR(50),
-    	                            slug VARCHAR(50),
-    	                            message TEXT,
-    	                            dateThread DATE,
-    	                            isClosed BOOLEAN,
-    	                            isDeleted BOOLEAN,
-    	                            FOREIGN KEY (userId) REFERENCES User(userId),
-    	                            FOREIGN KEY (forumId) REFERENCES Forum(forumId)
-    	                           );
+                                    forumId INT,
+                                    userId INT,
+                                    title VARCHAR(50),
+                                    slug VARCHAR(50),
+                                    message TEXT,
+                                    dateThread DATE,
+                                    isClosed BOOLEAN,
+                                    isDeleted BOOLEAN,
+                                    FOREIGN KEY (userId) REFERENCES User(userId),
+                                    FOREIGN KEY (forumId) REFERENCES Forum(forumId)
+                                   );
             '''
 
     cursor.execute(query)
     row = cursor.fetchall()
 
 
+def dropdb(request):
+    dropPost()
+    dropThread()
+    dropForum()
+    dropUser()
+    return HttpResponse("OK")
 
+def dropUser():
+    cursor = connection.cursor() 
+    query = '''DROP TABLE User;
+            '''
+    cursor.execute(query)
+    row = cursor.fetchall()
 
+def dropForum():
+    cursor = connection.cursor() 
+    query = '''DROP TABLE Forum;
+            '''
+    cursor.execute(query)
+    row = cursor.fetchall()
 
+def dropThread():
+    cursor = connection.cursor() 
+    query = '''DROP TABLE Thread;
+            '''
+    cursor.execute(query)
+    row = cursor.fetchall()
+
+def dropPost():
+    cursor = connection.cursor() 
+    query = '''DROP TABLE Post;
+            '''
+    cursor.execute(query)
+    row = cursor.fetchall()
