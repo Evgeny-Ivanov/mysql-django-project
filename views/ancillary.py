@@ -33,34 +33,6 @@ def hello(request):
 
     return HttpResponse(responce,content_type="application/json")
 
-def insertUser(request):
-
-    username = request.GET["username"]
-    about = request.GET["about"]
-    isAnonymous = request.GET["isAnonymous"]
-    if(isAnonymous=="true"):
-        isAnonymous = True
-    else: 
-        isAnonymous = False
-    name = request.GET["name"]
-    email = request.GET["email"]
-
-    query = '''INSERT INTO User(username,about,name,email,isAnonymous) 
-               VALUES ('%s','%s','%s','%s','%d');
-            ''' % (username,about,name,email,isAnonymous,)
-
-    cursor = connection.cursor() 
-    cursor.execute(query)
-    #row = cursor.fetchall()
-
-    row = request.GET#нужно еще возвращать id 
-    code = 0
-    responce = { "code": code, "response": row }
-    responce = json.dumps(responce)
-
-    return HttpResponse(responce,content_type="application/json")
-
-
 def createdb(request):
     createUser()
     createForum()

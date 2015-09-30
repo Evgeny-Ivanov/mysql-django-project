@@ -16,10 +16,10 @@ Including another URLconf
 from django.conf.urls import include, url
 from django.contrib import admin
 
-from MySQLProject.views import hello
-from MySQLProject.views import createdb
-from MySQLProject.views import dropdb
-from MySQLProject.views import insertUser
+from views.ancillary import hello
+from views.ancillary import createdb
+from views.ancillary import dropdb
+from views.user import insertUser
 
 urlpatterns = [
     url('^hello/$',hello),
