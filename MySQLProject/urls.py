@@ -20,12 +20,18 @@ from views.ancillary import hello
 from views.ancillary import createdb
 from views.ancillary import dropdb
 from views.user import insertUser
+from views.forum import insertForum
+from views.thread import insertThread
+from views.post import insertPost
 
 urlpatterns = [
     url('^hello/$',hello),
     url('^createdb/$',createdb),
     url('^dropdb/$',dropdb),
     url('^insertUser/$',insertUser),
+    url('^insertForum/$',insertForum),
+    url('^insertThread/$',insertThread),
+    url('^insertPost/$',insertPost),
     url(r'^admin/', include(admin.site.urls)),
 
 ]

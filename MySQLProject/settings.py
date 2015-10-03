@@ -77,7 +77,7 @@ WSGI_APPLICATION = 'MySQLProject.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-	    'NAME': 'MySQLProject',
+	    'NAME': 'forums',
         'USER': 'root',
         'PASSWORD': '1',
         'HOST':'localhost',
