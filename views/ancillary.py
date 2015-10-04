@@ -6,6 +6,65 @@ from django.shortcuts import render
 from django.db import connection
 import json
 
+def status(request):
+    cursor = connection.cursor()
+
+    cursor.execute('''SELECT COUNT(*)
+    	              FROM User
+                   ''')
+    countUser = cursor.fetchone()[0]
+
+    cursor.execute('''SELECT COUNT(*)
+    	              FROM Thread
+                   ''')
+    countThread = cursor.fetchone()[0]
+
+    cursor.execute('''SELECT COUNT(*)
+    	              FROM Post
+                   ''')
+    countPost = cursor.fetchone()[0]
+
+    cursor.execute('''SELECT COUNT(*)
+    	              FROM Forum
+    	           ''')
+    countForum = cursor.fetchone()[0]
+
+    code = 0
+    responce = { "code": code, "response": {"user": countUser, 
+                                            "thread": countThread, 
+                                            "forum": countForum, 
+                                            "post": countPost}}
+    responce = json.dumps(responce)
+    return HttpResponse(responce,content_type="application/json")
+
+
+def clear(request):
+    cursor = connection.cursor()
+
+    #нужно будет еще добавить таблицу лайков
+    cursor.execute('''DELETE FROM Post
+                   ''')
+
+    cursor.execute('''DELETE FROM Subscriptions
+                   ''')
+
+    cursor.execute('''DELETE FROM Thread
+                   ''')
+
+    cursor.execute('''DELETE FROM Forum
+                   ''')
+
+    cursor.execute('''DELETE FROM Followers
+                   ''')
+
+    cursor.execute('''DELETE FROM User
+    	           ''')
+
+    code = 0
+    responce = { "code": code, "response": "OK"}
+    responce = json.dumps(responce)
+    return HttpResponse(responce,content_type="application/json")
+
 
 def hello(request):
     cursor = connection.cursor() #Для использования подключения к базе данных
@@ -148,3 +207,5 @@ def dropPost():
             '''
     cursor.execute(query)
     row = cursor.fetchall()
+
+

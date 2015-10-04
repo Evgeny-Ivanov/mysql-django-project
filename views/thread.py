@@ -54,3 +54,35 @@ def insertThread(request):#?forum=name&title=Thread With Sufficiently Large Titl
     responce = { "code": code, "response": requestCopy }
     responce = json.dumps(responce)
     return HttpResponse(responce,content_type="application/json")
+
+
+def closeThread(request):
+    cursor = connection.cursor()
+
+    idThread = request.GET["thread"]
+    idThread = int(idThread)
+    cursor.execute('''UPDATE Thread
+                      SET isClosed = false#возможно надо true
+                      WHERE idThread = %d
+                   ''' % (idThread,))
+
+    code = 0
+    responce = { "code": code, "response": {"thread":idThread,}}
+    responce = json.dumps(responce)
+    return HttpResponse(responce,content_type="application/json")
+
+def openThread(request):
+    cursor = connection.cursor()
+
+    idThread = request.GET["thread"]
+    idThread = int(idThread)
+    
+    cursor.execute('''UPDATE Thread
+                      SET isClosed = true#возможно надо false
+                      WHERE idThread = %d
+                   ''' % (idThread,))
+
+    code = 0
+    responce = { "code": code, "response": {"thread":idThread,}}
+    responce = json.dumps(responce)
+    return HttpResponse(responce,content_type="application/json")

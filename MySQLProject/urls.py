@@ -19,9 +19,20 @@ from django.contrib import admin
 from views.ancillary import hello
 from views.ancillary import createdb
 from views.ancillary import dropdb
+
+from views.ancillary import status
+from views.ancillary import clear
+
 from views.user import insertUser
+from views.user import detailsUser
+from views.user import followUser
+
 from views.forum import insertForum
+
 from views.thread import insertThread
+from views.thread import closeThread
+from views.thread import openThread 
+
 from views.post import insertPost
 
 urlpatterns = [
@@ -32,6 +43,12 @@ urlpatterns = [
     url('^insertForum/$',insertForum),
     url('^insertThread/$',insertThread),
     url('^insertPost/$',insertPost),
+    url('^db/api/user/details/$',detailsUser),
+    url('^db/api/user/follow/$',followUser),
+    url('^db/api/thread/close/$',closeThread),
+    url('^db/api/thread/open/$',openThread),
+    url('^db/api/status/$',status),
+    url('^db/api/clear/$',clear),
     url(r'^admin/', include(admin.site.urls)),
 
 ]
