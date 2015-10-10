@@ -34,7 +34,7 @@ def insertThread(request):#?forum=name&title=Thread With Sufficiently Large Titl
 
     cursor.execute('''SELECT idForum
                       FROM Forum
-                      WHERE name = '%s';
+                      WHERE shortName = '%s';
                    ''' % (forum,))
     idForum = cursor.fetchone()[0]
 
@@ -86,3 +86,4 @@ def openThread(request):
     responce = { "code": code, "response": {"thread":idThread,}}
     responce = json.dumps(responce)
     return HttpResponse(responce,content_type="application/json")
+

@@ -4,7 +4,7 @@ from django.db import connection
 import json
 
 
-def insertPost(request):
+def insertPost(request):#к нам приходит forum но мы с нис какого то хера ничего не делаем
     cursor = connection.cursor()
 
     message = request.GET["message"]
