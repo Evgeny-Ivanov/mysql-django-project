@@ -29,6 +29,8 @@ from views.user import followUser
 from views.user import updateProfile
 from views.user import unfollowUser
 from views.user import listFollowersUser
+from views.user import listFollowingUser
+from views.user import listPostsUser
 
 from views.forum import insertForum
 from views.forum import listUsersInForum
@@ -56,6 +58,8 @@ urlpatterns = [
     url('^db/api/user/unfollow/$',unfollowUser),
     url('^listFollowersUser/$',listFollowersUser),
     url('^listThreadsInForum/$',listThreadsInForum),
+    url('^db/api/user/listFollowing/$',listFollowingUser),
+    url('^db/api/user/listPosts/$',listPostsUser),
     url('^db/api/thread/open/$',openThread),
     url('^db/api/status/$',status),
     url('^db/api/clear/$',clear),
