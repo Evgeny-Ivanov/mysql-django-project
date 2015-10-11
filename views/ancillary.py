@@ -41,7 +41,6 @@ def status(request):
 def clear(request):
     cursor = connection.cursor()
 
-    #нужно будет еще добавить таблицу лайков
     cursor.execute('''DELETE FROM Post
                    ''')
 
@@ -58,38 +57,11 @@ def clear(request):
                    ''')
 
     cursor.execute('''DELETE FROM User
-    	           ''')
+    	             ''')
 
     code = 0
     responce = { "code": code, "response": "OK"}
     responce = json.dumps(responce)
-    return HttpResponse(responce,content_type="application/json")
-
-
-def hello(request):
-    cursor = connection.cursor() #Для использования подключения к базе данных
-    
-    #cursor.execute("CREATE TABLE buf (name VARCHAR(10) PRIMARY KEY)")
-    #cursor.execute("INSERT INTO buf VALUES ('Evgeny')")
-    username = request.GET["username"]
-    query = '''SELECT username
-               FROM User
-               WHERE username = '%s';
-            ''' % username
-
-    cursor.execute(query) #для выполнения SQL
-    #cursor.execute("DROP TABLE buf")
-    #row = cursor.fetchone() #для получения результата
-    row = cursor.fetchall()
-    #row = json.dumps(row)
-
-    code = 0
-    responce = { "code": code, "response": row }
-    responce = json.dumps(responce)
-
-    #if request.method == 'POST':
-    #    return request.body  
-
     return HttpResponse(responce,content_type="application/json")
 
 def createdb(request):
@@ -171,43 +143,6 @@ def createThread():
 
     cursor.execute(query)
     row = cursor.fetchall()
-
-
-def dropdb(request):
-    dropPost()
-    dropThread()
-    dropForum()
-    dropUser()
-    return HttpResponse("OK")
-
-def dropUser():
-    cursor = connection.cursor() 
-    query = '''DROP TABLE User;
-            '''
-    cursor.execute(query)
-    row = cursor.fetchall()
-
-def dropForum():
-    cursor = connection.cursor() 
-    query = '''DROP TABLE Forum;
-            '''
-    cursor.execute(query)
-    row = cursor.fetchall()
-
-def dropThread():
-    cursor = connection.cursor() 
-    query = '''DROP TABLE Thread;
-            '''
-    cursor.execute(query)
-    row = cursor.fetchall()
-
-def dropPost():
-    cursor = connection.cursor() 
-    query = '''DROP TABLE Post;
-            '''
-    cursor.execute(query)
-    row = cursor.fetchall()
-
 
 def dictfetchall(cursor):
     "Returns all rows from a cursor as a dict"

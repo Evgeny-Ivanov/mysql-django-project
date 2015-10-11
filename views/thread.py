@@ -45,7 +45,7 @@ def closeThread(request):
     idThread = request.GET["thread"]
     idThread = int(idThread)
     cursor.execute('''UPDATE Thread
-                      SET isClosed = false#возможно надо true
+                      SET isClosed = true#возможно надо fasle
                       WHERE idThread = %d
                    ''' % (idThread,))
 
@@ -61,7 +61,7 @@ def openThread(request):
     idThread = int(idThread)
     
     cursor.execute('''UPDATE Thread
-                      SET isClosed = true#возможно надо false
+                      SET isClosed = false#возможно надо true
                       WHERE idThread = %d
                    ''' % (idThread,))
 

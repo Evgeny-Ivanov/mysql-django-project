@@ -121,29 +121,33 @@ def listUsersInForum(request):#вроде работает, но вывод foll
 def listThreadsInForum(request):
     cursor = connection.cursor()
 
-    import time
-
     shortName = request.GET['forum']
     since = request.GET.get('since',None)#дата треды старше которой нам нужны
-    since = time.strptime(since, "%Y-%m-%d %H:%M:%S")
-    limit = int(request.GET.get('limit',None))
+    #import datetime
+    #if since is not None:
+    #   since = datetime.datetime.strptime(since, "%Y-%m-%d %H:%M:%S")
+    limit = request.GET.get('limit',None)
+    if limit is not None:
+        limit = int(limit)
     order = request.GET.get('order','DESC')
     related = request.GET.getlist('related',[])#массив Possible values: ['user', 'forum']. Default: []
 
-    idForum = getIdForum(cursor,shortName)
-
-    #dislikes,likes,points,posts
-    query = '''SELECT CAST(Thread.dateThread AS CHAR) AS `date`,idThread AS id,isClosed,isDeleted,message,slug,title,Thread.idUser AS user,Thread.idForum AS forum
+    #что такое posts и points?
+    query = '''SELECT CAST(Thread.dateThread AS CHAR) AS `date`,idThread AS id,isClosed,isDeleted,
+                      message,slug,title,Thread.user,Thread.forum,points,likes,dislikes,posts
                FROM Forum JOIN Thread
-                          ON Forum.idForum = Thread.idForum
-               WHERE Forum.shortName = '%s'
+                          ON Forum.short_name = Thread.forum
+               WHERE Forum.short_name = '%s'
             '''%(shortName,)
 
-    if since is not None:
-        query += "AND `dateThread` >= %s "%since
+    if since is not None:#удивительно но работает
+        query += "AND `dateThread` >= '%s' "%since
+
+    if order is not None:
+        query += "ORDER BY dateThread %s"%order
 
     if limit is not None:
-        query += "LIMIT %d "%limit
+        query += " LIMIT %d "%limit
 
     cursor.execute(query)
     threads = dictfetchall(cursor)
@@ -152,7 +156,7 @@ def listThreadsInForum(request):
         if 'user' in related:
             cursor.execute('''SELECT * 
                               FROM User
-                              WHERE idUser = %d;
+                              WHERE email = '%s'
                           '''%(thread['user'],))
             user = dictfetchall(cursor)
             thread.update({'user': user[0]})
@@ -160,13 +164,77 @@ def listThreadsInForum(request):
         if 'forum' in related:
             cursor.execute('''SELECT * 
                               FROM Forum
-                              WHERE idForum = %d;
+                              WHERE short_name = '%s'
                            '''%(thread['forum'],))
             forum = dictfetchall(cursor)
             thread.update({'forum': forum[0]})
 
     code = 0
     responce = { "code": code, "response": threads }
+    responce = json.dumps(responce)
+
+    return HttpResponse(responce,content_type="application/json")
+
+def listPostsInForum(request):
+    cursor = connection.cursor()
+
+    shortName = request.GET['forum']
+    since = request.GET.get('since',None)
+    limit = request.GET.get('limit',None)
+    if limit is not None:
+        limit = int(limit)
+    order = request.GET.get('order','DESC')#sort order (by date)
+    related = request.GET.getlist('related',[])#Possible values: ['thread', 'forum', 'user']. Default: []
+
+    #datetime.datetime(2014, 1, 1, 0, 0, 1, tzinfo=<UTC>) is not JSON serializable - костыль - перечисление всех полей
+    query = '''SELECT  idPost AS id,forum,idThread AS thread,Post.user,parent,CAST(datePost AS CHAR) AS `date`,message,
+                       isEdited,isDeleted,isSpam,isHighlighted,isApproved,likes,dislikes,points
+               FROM Forum JOIN Post
+                          ON Forum.short_name = Post.forum
+               WHERE Forum.short_name = '%s'
+            '''%(shortName,)
+
+    if since is not None:
+        query += "AND `datePost` >= '%s' "%since
+
+    if order is not None:
+        query += "ORDER BY datePost %s"%order
+
+    if limit is not None:
+        query += " LIMIT %d "%limit
+
+    cursor.execute(query)
+    posts = dictfetchall(cursor)
+
+    for post in posts:
+        if 'user' in related:
+            cursor.execute('''SELECT * 
+                              FROM User
+                              WHERE email = '%s'
+                          '''%(post['user'],))
+            user = dictfetchall(cursor)
+            post.update({'user': user[0]})
+
+        if 'forum' in related:
+            cursor.execute('''SELECT * 
+                              FROM Forum
+                              WHERE short_name = '%s'
+                           '''%(post['forum'],))
+            forum = dictfetchall(cursor)
+            post.update({'forum': forum[0]})
+
+        if 'thread' in related:
+            cursor.execute('''SELECT CAST(dateThread AS CHAR) AS `date`,idThread AS id,isClosed,isDeleted,
+                                     message,slug,title,user,forum,points,likes,dislikes,posts
+                              FROM Thread
+                              WHERE idThread = %d
+                           '''%(post['thread'],))
+            thread = dictfetchall(cursor)
+            post.update({'thread': thread[0]})
+
+
+    code = 0
+    responce = { "code": code, "response": posts }
     responce = json.dumps(responce)
 
     return HttpResponse(responce,content_type="application/json")

@@ -21,7 +21,6 @@ from django.contrib import admin
 from views.ancillary import status
 from views.ancillary import clear
 from views.ancillary import createdb
-from views.ancillary import dropdb
 
 #User
 from views.user import insertUser
@@ -38,6 +37,7 @@ from views.forum import insertForum
 from views.forum import listUsersInForum
 from views.forum import listThreadsInForum
 from views.forum import detailsForum
+from views.forum import listPostsInForum
 
 #Thread
 from views.thread import insertThread
@@ -64,6 +64,7 @@ urlpatterns = [
     url('^detailsForum/$',detailsForum),
     url('^db/api/forum/listUsers/$',listUsersInForum),
     url('^listThreadsInForum/$',listThreadsInForum),
+    url('^listPostsInForum/$',listPostsInForum),
 
     #Thread
     url('^insertThread/$',insertThread),
@@ -77,7 +78,6 @@ urlpatterns = [
     url('^db/api/status/$',status),
     url('^db/api/clear/$',clear),
     url('^createdb/$',createdb),
-    url('^dropdb/$',dropdb),
     
     url(r'^admin/', include(admin.site.urls)),
 
