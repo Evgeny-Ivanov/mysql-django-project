@@ -2,68 +2,61 @@
 from django.http import HttpResponse,HttpRequest
 from django.db import connection
 import json
+from views.user import getBollean
 
-
-def insertPost(request):#к нам приходит forum но мы с нис какого то хера ничего не делаем
+def insertPost(request):#работает, но нужно разобраться с path
     cursor = connection.cursor()
 
     message = request.GET["message"]
     datePost = request.GET["date"]
     email = request.GET["user"]
-    idThread = request.GET["thread"]#что то с этим не так 
-    forum = request.GET["forum"]#нужно будет с этим что то сделать
+    idThread = int(request.GET["thread"])
+    forum = request.GET["forum"]
+    parent = request.GET.get("parent",None)#None == NULL ?
+    if parent is not None:
+        parent = int(parent)
 
-    isApproved = request.GET["isApproved"]
-    if(isApproved=="true"):
-        isApproved = True
-    else: 
-        isApproved = False
+    isApproved = request.GET.get("isApproved",0)
+    isApproved = getBollean(isApproved)
 
-    isDeleted = request.GET["isDeleted"]
-    if(isDeleted=="true"):
-        isDeleted = True
-    else: 
-        isDeleted = False  
+    isDeleted = request.GET.get("isDeleted",0)
+    isDeleted = getBollean(isDeleted)
 
-    isEdited = request.GET["isEdited"]
-    if(isEdited=="true"):
-        isEdited = True
-    else: 
-        isEdited = False
+    isEdited = request.GET.get("isEdited",0)
+    isEdited = getBollean(isEdited)
 
-    isHighlighted = request.GET["isHighlighted"]
-    if(isHighlighted=="true"):
-        isHighlighted = True
-    else: 
-        isHighlighted = False
+    isHighlighted = request.GET.get("isHighlighted",0)
+    isHighlighted = getBollean(isHighlighted)
 
-    isSpam = request.GET["isSpam"]
-    if(isSpam=="true"):
-        isSpam = True
+    isSpam = request.GET.get("isSpam",0)
+    isSpam = getBollean(isSpam)
+
+
+    path = ' '#эту штуку видимо надо генерить исходя из path родителя 
+              #нужно будет для сортировки
+
+    #костыль чтоб записать в Parent NULL
+    if parent is None:
+        cursor.execute('''INSERT INTO Post(forum, idThread, user, datePost, message,  isEdited, isDeleted, isSpam,  isHighlighted, isApproved , `path`) 
+                          VALUES          ( '%s',    '%d',  '%s',    '%s'  ,  '%s'     ,'%d'      ,'%d'  , '%d'   ,   '%d'       ,    '%d'    , '%s'  );
+                       '''              % (forum, idThread, email, datePost, message, isEdited, isDeleted, isSpam,  isHighlighted,  isApproved, path  )) 
     else:
-        isSpam = False
-
-    cursor.execute('''SELECT idUser
-                      FROM User 
-                      WHERE email = '%s'
-                   ''' % (email,))
-    idUser = cursor.fetchone()[0]
-
-    #пока не вставляем parent = 'NULL'
-    cursor.execute('''INSERT INTO Post(idThread,idUser,datePost,message,isEdited,isDeleted,isSpam,isHighlighted,isApproved) 
-                      VALUES          ( '%s',    '%s',  '%s'    ,'%s'   ,'%d'      ,'%d'   ,'%d'   ,'%d',          '%d');
-                   ''' % (idThread,idUser,datePost,message,
-                    isEdited,isDeleted,
-                    isSpam,
-                    isHighlighted,
-                    isApproved
-
-                    ,)) 
+        cursor.execute('''INSERT INTO Post(forum, idThread, user, datePost, message,  isEdited, isDeleted, isSpam,  isHighlighted, isApproved, parent  , `path`) 
+                          VALUES          ( '%s',    '%d',  '%s',    '%s'  ,  '%s'     ,'%d'      ,'%d'  , '%d'   ,   '%d'       ,    '%d'    , '%s'   , '%s'  );
+                       '''              % (forum, idThread, email, datePost, message, isEdited, isDeleted, isSpam,  isHighlighted,  isApproved, parent , path  ))
 
     requestCopy = request.GET.copy()
-    requestCopy.__setitem__('id',idUser)#setdefault()
-    requestCopy.__setitem__('parent','null')#setdefault()
+
+    cursor.execute('''SELECT LAST_INSERT_ID();
+                   ''')
+    idPost = cursor.fetchone()[0]
+
+    requestCopy.__setitem__('id',idPost)
+    requestCopy.__setitem__('parent',parent)
+
+
     code = 0
     responce = { "code": code, "response": requestCopy }
     responce = json.dumps(responce)
     return HttpResponse(responce,content_type="application/json")
+

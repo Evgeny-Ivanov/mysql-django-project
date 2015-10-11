@@ -2,10 +2,13 @@
 from django.http import HttpResponse,HttpRequest
 from django.db import connection
 import json
-
+from views.ancillary import getBollean
 
 def insertThread(request):#?forum=name&title=Thread With Sufficiently Large Title&isClosed=true&user=example3@mail.ru&date=2014-01-01 00:00:01&message=hey hey hey hey!&slug=Threadwithsufficientlylargetitle&isDeleted=true
     cursor = connection.cursor()
+    #Тред везде индентефицируется по id => возможно(????)
+    #нужно следить что бы не было ошибок во избежание произвольного автоинкементирования
+    #возможно нужно вообще убрать автоикремент 
 
     forum = request.GET["forum"]
     title = request.GET["title"]
@@ -14,38 +17,18 @@ def insertThread(request):#?forum=name&title=Thread With Sufficiently Large Titl
     message = request.GET["message"]
     slug = request.GET["slug"]
 
-    isClosed = request.GET["isClosed"]
-    if(isClosed=="true"):
-        isClosed = True
-    else: 
-        isClosed = False
+    isClosed = request.GET.get("isClosed",0)
+    isClosed = getBollean(isClosed)
 
-    isDeleted = request.GET["isDeleted"]
-    if(isDeleted=="true"):
-        isDeleted = True
-    else: 
-        isDeleted = False
+    isDeleted = request.GET.get("isDeleted",0)
+    isDeleted = getBollean(isDeleted)
 
-    cursor.execute('''SELECT idUser
-                      FROM User 
-                      WHERE email = '%s';
-                   ''' % (email,))
-    idUser = cursor.fetchone()[0]
+    cursor.execute('''INSERT INTO Thread(forum,user,title,slug,message,dateThread,isClosed,isDeleted) 
+                      VALUES ('%s','%s','%s','%s','%s','%s','%d','%d');
+                   ''' % (forum,email,title,slug,message,dateThread,isClosed,isDeleted,)) 
 
-    cursor.execute('''SELECT idForum
-                      FROM Forum
-                      WHERE shortName = '%s';
-                   ''' % (forum,))
-    idForum = cursor.fetchone()[0]
-
-    cursor.execute('''INSERT INTO Thread(idForum,idUser,title,slug,message,dateThread,isClosed,isDeleted) 
-                      VALUES ('%d','%d','%s','%s','%s','%s','%d','%d');
-                   ''' % (idForum,idUser,title,slug,message,dateThread,isClosed,isDeleted,)) 
-
-    cursor.execute('''SELECT idThread
-                      FROM Thread
-                      WHERE title = '%s';
-                   ''' % (title,))#title - не уникален,нужно поменять
+    cursor.execute('''SELECT LAST_INSERT_ID();
+                   ''')
     idThread = cursor.fetchone()[0]
 
     requestCopy = request.GET.copy()

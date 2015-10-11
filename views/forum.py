@@ -4,6 +4,11 @@ from django.db import connection
 import json
 from views.user import getBollean
 from views.ancillary import dictfetchall
+from views.user import DetailsUser
+from views.user import getFollowers
+from views.user import getFollowing
+from views.user import getSubscriptions
+
 
 def getIdForum(cursor,shortName):
     cursor.execute('''SELECT idForum
@@ -19,15 +24,13 @@ def insertForum(request):#insertForum?name=Forum With Sufficiently Large Name3&s
     shortName = request.GET["short_name"]
     email = request.GET["user"]#user = email
 
-    idUser = getIdUser(cursor,email)
-
-    cursor.execute('''INSERT INTO Forum(name,shortName,idUser) 
+    cursor.execute('''INSERT INTO Forum(name,short_name,user) 
                       VALUES ('%s','%s','%s');
-                   ''' % (name,shortName,idUser,))
+                   ''' % (name,shortName,email,))
 
     cursor.execute('''SELECT idForum
                       FROM Forum
-                      WHERE shortName = '%s';
+                      WHERE short_name = '%s';
                    ''' % (shortName,))
     idForum = cursor.fetchone()[0]
 
@@ -38,39 +41,81 @@ def insertForum(request):#insertForum?name=Forum With Sufficiently Large Name3&s
     responce = json.dumps(responce)
 
     return HttpResponse(responce,content_type="application/json")
-#######не работает
-def listUsersInForum(request):#в Post должен храниться и форум
+
+
+def detailsForum(request):
+    cursor = connection.cursor()
+
+    shortName = request.GET['short_name']
+    related = request.GET.getlist('related',[])
+
+
+    cursor.execute('''SELECT short_name,name,idForum AS id,user
+                      FROM Forum
+                      WHERE short_name = '%s';
+                   ''' % (shortName,))
+    responce = dictfetchall(cursor)[0]
+
+    if 'user' in related:
+        email = responce.get('user','')
+        responceDetailsUser = DetailsUser(cursor,email)
+        user = responceDetailsUser["response"]
+        responce.update({'user':user})
+
+    code = 0
+    responce = { "code": code, "response":responce }
+    responce = json.dumps(responce)
+    return HttpResponse(responce,content_type="application/json")
+
+
+
+def listUsersInForum(request):#вроде работает, но вывод followers,following,subscriptions нужно поменять(выводятся как в массиве)
     cursor = connection.cursor()
 
     shortName = request.GET["forum"]
-    order = request.GET.get("order", 'desc')
+
+    order = request.GET.get("order", 'desc')#sort order (by name)
     limit = request.GET.get("limit", None)
+    if limit is not None:
+        limit = int(limit)
     since_id = request.GET.get("since_id", None)
+    if since_id is not None:
+        since_id = int(since_id)
 
-    idForum = getIdForum(cursor,shortName)
+    query = '''SELECT DISTINCT User.email,User.about,User.idUser AS id,User.isAnonymous,User.name,User.username
+               FROM Post JOIN User
+                         ON User.email = Post.user
+               WHERE Post.forum = '%s'
+               ORDER BY User.name %s
+            ''' % (shortName,order)
+  
+    if limit is not None:
+        query += " LIMIT %d"%(limit)   
+        #########            могут ли limit и since_id сочетаться? 
+    if since_id is not None:
+        query += " LIMIT %d,100000000"%(since_id)#костыль
 
-    cursor.execute('''SELECT DISTINCT User.*,Followers.id#блять как не удобно по id , опять джойнить ? 
-                      FROM Thread JOIN Post              #это может быть быстрее ?
-                                  ON Thread.idThread = Post.idThread
-                                  JOIN User 
-                                  ON User.idUser = Post.idUser
+    cursor.execute(query)
+    users = dictfetchall(cursor)
 
-                                  JOIN Subscriptions 
-                                  ON Subscriptions.idUser = User.idUser
-                                  JOIN Followers 
-                                  ON Followers.idUser = User.idUser
+    for user in users:
+        followers = getFollowers(cursor,user['email'])
+        user.update({'followers': followers})
 
-                      WHERE Thread.idThread = %d
-                      ORDER BY User.name %s;
-                   ''' % (idForum,order))
-    responce = cursor.fetchall()#нужно видимо хранить в Post и idForum
+        following = getFollowing(cursor,user['email'])
+        user.update({'following': following})
+
+        subscriptions = getSubscriptions(cursor,user['email'])
+        user.update({'subscriptions': subscriptions})        
+
+    #нужно видимо хранить в Post и idForum
     #получаем массив мыассивов пользователей, теперь надо как то составить ответ 
 
     code = 0
-    responce = { "code": code, "response": responce }
-    responce = json.dumps(responce)
+    response = { "code": code, "response": users }
+    response = json.dumps(response)
 
-    return HttpResponse(responce,content_type="application/json")
+    return HttpResponse(response,content_type="application/json")
 
 
 def listThreadsInForum(request):

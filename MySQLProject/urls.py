@@ -16,13 +16,14 @@ Including another URLconf
 from django.conf.urls import include, url
 from django.contrib import admin
 
-from views.ancillary import hello
+
+#Ancillary
+from views.ancillary import status
+from views.ancillary import clear
 from views.ancillary import createdb
 from views.ancillary import dropdb
 
-from views.ancillary import status
-from views.ancillary import clear
-
+#User
 from views.user import insertUser
 from views.user import detailsUser
 from views.user import followUser
@@ -32,38 +33,52 @@ from views.user import listFollowersUser
 from views.user import listFollowingUser
 from views.user import listPostsUser
 
+#Forum
 from views.forum import insertForum
 from views.forum import listUsersInForum
 from views.forum import listThreadsInForum
+from views.forum import detailsForum
 
+#Thread
 from views.thread import insertThread
 from views.thread import closeThread
 from views.thread import openThread 
 
-
+#Post
 from views.post import insertPost
 
+
 urlpatterns = [
-    url('^hello/$',hello),
-    url('^createdb/$',createdb),
-    url('^dropdb/$',dropdb),
+    #User
     url('^insertUser/$',insertUser),
-    url('^insertForum/$',insertForum),
-    url('^insertThread/$',insertThread),
-    url('^insertPost/$',insertPost),
     url('^db/api/user/details/$',detailsUser),
     url('^db/api/user/follow/$',followUser),
-    url('^db/api/thread/close/$',closeThread), 
     url('^db/api/user/updateProfile/$',updateProfile),
     url('^db/api/user/unfollow/$',unfollowUser),
     url('^listFollowersUser/$',listFollowersUser),
-    url('^listThreadsInForum/$',listThreadsInForum),
     url('^db/api/user/listFollowing/$',listFollowingUser),
     url('^db/api/user/listPosts/$',listPostsUser),
+
+    #Forum
+    url('^insertForum/$',insertForum),
+    url('^detailsForum/$',detailsForum),
+    url('^db/api/forum/listUsers/$',listUsersInForum),
+    url('^listThreadsInForum/$',listThreadsInForum),
+
+    #Thread
+    url('^insertThread/$',insertThread),
+    url('^db/api/thread/close/$',closeThread), 
     url('^db/api/thread/open/$',openThread),
+
+    #Post
+    url('^insertPost/$',insertPost),
+
+    #Ancillary
     url('^db/api/status/$',status),
     url('^db/api/clear/$',clear),
-    url('^db/api/forum/listUsers/$',listUsersInForum),
+    url('^createdb/$',createdb),
+    url('^dropdb/$',dropdb),
+    
     url(r'^admin/', include(admin.site.urls)),
 
 ]

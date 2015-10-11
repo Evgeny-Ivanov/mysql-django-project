@@ -216,3 +216,11 @@ def dictfetchall(cursor):
         dict(zip([col[0] for col in desc], row))
         for row in cursor.fetchall()
     ]
+
+
+
+def getBollean(variable):
+    if(variable=="true" or variable==1 or variable=='1'):
+        return True
+    else: 
+        return False

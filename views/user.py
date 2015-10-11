@@ -3,12 +3,31 @@ from django.http import HttpResponse,HttpRequest
 from django.db import connection
 import json
 from views.ancillary import dictfetchall
+from views.ancillary import getBollean
 
-def getBollean(variable):
-    if(variable=="true" or variable==1 or variable=='1'):
-        return True
-    else: 
-        return False
+
+def getFollowing(cursor,email):
+    cursor.execute('''SELECT User.email
+                      FROM Followers JOIN User
+                                     ON Followers.follower = User.email
+                      WHERE Followers.user = '%s'
+                   ''' % (email,))
+    return cursor.fetchall()
+
+def getFollowers(cursor,email):
+    cursor.execute('''SELECT User.email
+                      FROM Followers JOIN User
+                                     ON Followers.user = User.email
+                      WHERE Followers.follower = '%s'
+                   ''' % (email,))
+    return cursor.fetchall()
+
+def getSubscriptions(cursor,email):
+    cursor.execute('''SELECT idThread
+                      FROM Subscriptions
+                      WHERE user = '%s'
+                   ''' % (email,))
+    return cursor.fetchall()
 
 
 def DetailsUserWithoutFollowingAndFollowers(cursor,email):
@@ -89,7 +108,6 @@ def DetailsUser(cursor,email):
                                            'email': email,
 
     }}
-    responce = json.dumps(responce)
     return responce
 
 
@@ -127,7 +145,8 @@ def detailsUser(request):
     #Following – ваши подписки или люди, которых вы читаете
     #Followers – это ваши читатели
     email = request.GET["user"]
-    return HttpResponse(DetailsUser(cursor,email),content_type="application/json")
+    responce = json.dumps(responce)
+    return HttpResponse(responce,content_type="application/json")
 
 def followUser(request):
     cursor = connection.cursor()
@@ -141,7 +160,7 @@ def followUser(request):
                    ''' % (followerEmail,followeeEmail))#не наоборот ли нужно?
 
     responce = DetailsUser(cursor,followeeEmail)
-
+    responce = json.dumps(responce)
     return HttpResponse(responce,content_type="application/json")
 
 def updateProfile(request):
@@ -158,6 +177,7 @@ def updateProfile(request):
                    ''' % (about,name,email,)) 
 
     responce = DetailsUser(cursor,email)
+    responce = json.dumps(responce)
     return HttpResponse(responce,content_type="application/json")
 
 def unfollowUser(request):#все скорее всего напутано
@@ -171,6 +191,7 @@ def unfollowUser(request):#все скорее всего напутано
                    ''' % (followeeEmail,followerEmail))
 
     responce = DetailsUser(cursor,followeeEmail)
+    responce = json.dumps(responce)
     return HttpResponse(responce,content_type="application/json")
 
 def listFollowersUser(request):#список подпищиков
@@ -275,3 +296,5 @@ def listPostsUser(request):
     response = { "code": code, "response":response }
     response = json.dumps(response)
     return HttpResponse(response,content_type="application/json")
+
+
