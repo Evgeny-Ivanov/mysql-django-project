@@ -1,0 +1,13 @@
+MySQLProject/__init__.pyc
+MySQLProject/wsgi.pyc
+MySQLProject/urls.pyc
+MySQLProject/settings.pyc
+
+views/ancillary.pyc
+views/forum.pyc
+views/__init__.pyc
+views/post.pyc
+views/thread.pyc
+views/user.pyc
+
+
