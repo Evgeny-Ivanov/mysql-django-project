@@ -2,7 +2,15 @@
 from django.http import HttpResponse,HttpRequest
 from django.db import connection
 import json
-from views.ancillary import getBollean
+from views.ancillary import getBollean,dictfetchall
+
+def getThreadById(cursor,idThread):
+    cursor.execute('''SELECT CAST(dateThread AS CHAR) AS `date`,idThread AS id,isClosed,isDeleted,
+                             message,slug,title,user,forum,points,likes,dislikes,posts
+                      FROM Thread
+                      WHERE idThread = %d
+                   '''%idThread )
+    return dictfetchall(cursor)
 
 def insertThread(request):#?forum=name&title=Thread With Sufficiently Large Title&isClosed=true&user=example3@mail.ru&date=2014-01-01 00:00:01&message=hey hey hey hey!&slug=Threadwithsufficientlylargetitle&isDeleted=true
     cursor = connection.cursor()

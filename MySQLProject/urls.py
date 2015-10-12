@@ -46,6 +46,12 @@ from views.thread import openThread
 
 #Post
 from views.post import insertPost
+from views.post import detailsPost
+from views.post import removePost,restorePost
+from views.post import updatePost
+from views.post import votePost
+from views.post import listPost
+
 
 
 urlpatterns = [
@@ -73,6 +79,12 @@ urlpatterns = [
 
     #Post
     url('^insertPost/$',insertPost),
+    url('^detailsPost/$',detailsPost),
+    url('^removePost/$',removePost),
+    url('^restorePost/$',restorePost),
+    url('^updatePost/$',updatePost),
+    url('^votePost/$',votePost),
+    url('^listPost/$',listPost),
 
     #Ancillary
     url('^db/api/status/$',status),

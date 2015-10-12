@@ -10,12 +10,12 @@ from views.user import getFollowing
 from views.user import getSubscriptions
 
 
-def getIdForum(cursor,shortName):
-    cursor.execute('''SELECT idForum
+def getForumByShortName(cursor,shortName):
+    cursor.execute('''SELECT idForum AS id,name,short_name,user                      
                       FROM Forum
-                      WHERE shortName = '%s'
-                   ''' % (shortName,))
-    return cursor.fetchone()[0]
+                      WHERE short_name = '%s'
+                   '''%(shortName,))
+    return dictfetchall(cursor)
 
 def insertForum(request):#insertForum?name=Forum With Sufficiently Large Name3&short_name=forumwithsufficientlylargename3&user=example3@mail.ru
     cursor = connection.cursor()

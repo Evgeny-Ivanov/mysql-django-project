@@ -6,6 +6,13 @@ from views.ancillary import dictfetchall
 from views.ancillary import getBollean
 
 
+def getUserByEmail(cursor,email):
+    cursor.execute('''SELECT about,email,idUser AS idisAnonymous,name,username
+                      FROM User
+                      WHERE email = '%s'
+                   '''%email )
+    return dictfetchall(cursor)
+
 def getFollowing(cursor,email):
     cursor.execute('''SELECT User.email
                       FROM Followers JOIN User
