@@ -43,6 +43,11 @@ from views.forum import listPostsInForum
 from views.thread import insertThread
 from views.thread import closeThread
 from views.thread import openThread 
+from views.thread import detailsThread
+from views.thread import voteThread
+from views.thread import updateThread
+from views.thread import subscribeThread,unsubscribeThread
+from views.thread import listThread
 
 #Post
 from views.post import insertPost
@@ -76,6 +81,12 @@ urlpatterns = [
     url('^insertThread/$',insertThread),
     url('^db/api/thread/close/$',closeThread), 
     url('^db/api/thread/open/$',openThread),
+    url('^detailsThread/$',detailsThread),
+    url('^voteThread/$',voteThread),
+    url('^updateThread/$',updateThread),
+    url('^subscribeThread/$',subscribeThread),
+    url('^unsubscribeThread/$',unsubscribeThread),
+    url('^listThread/$',listThread),
 
     #Post
     url('^insertPost/$',insertPost),

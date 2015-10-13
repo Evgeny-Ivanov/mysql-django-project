@@ -7,7 +7,7 @@ from views.ancillary import getBollean
 
 
 def getUserByEmail(cursor,email):
-    cursor.execute('''SELECT about,email,idUser AS idisAnonymous,name,username
+    cursor.execute('''SELECT about,email,idUser AS id,isAnonymous,name,username
                       FROM User
                       WHERE email = '%s'
                    '''%email )
