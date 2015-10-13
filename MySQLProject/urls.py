@@ -48,6 +48,7 @@ from views.thread import voteThread
 from views.thread import updateThread
 from views.thread import subscribeThread,unsubscribeThread
 from views.thread import listThread
+from views.thread import removeThread,restoreThread
 
 #Post
 from views.post import insertPost
@@ -87,6 +88,8 @@ urlpatterns = [
     url('^subscribeThread/$',subscribeThread),
     url('^unsubscribeThread/$',unsubscribeThread),
     url('^listThread/$',listThread),
+    url('^removeThread/$',removeThread),
+    url('^restoreThread/$',restoreThread),
 
     #Post
     url('^insertPost/$',insertPost),

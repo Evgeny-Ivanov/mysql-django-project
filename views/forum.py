@@ -86,14 +86,15 @@ def listUsersInForum(request):#вроде работает, но вывод foll
                FROM Post JOIN User
                          ON User.email = Post.user
                WHERE Post.forum = '%s'
-               ORDER BY User.name %s
-            ''' % (shortName,order)
-  
+            ''' % (shortName)
+
+    if since_id is not None:
+        query += " AND User.idUser >= %d "%(since_id)
+
+    query += "ORDER BY User.name %s "%order
+
     if limit is not None:
         query += " LIMIT %d"%(limit)   
-        #########            могут ли limit и since_id сочетаться? 
-    if since_id is not None:
-        query += " LIMIT %d,100000000"%(since_id)#костыль
 
     cursor.execute(query)
     users = dictfetchall(cursor)

@@ -216,8 +216,44 @@ def listThread(request):#GET #вроде работает, но на работ�
 
     return HttpResponse(response,content_type="application/json")
 
+
+def removeThread(request):#POST
+    cursor = connection.cursor()
+
+    idThread = int(request.GET['thread'])
+
+    cursor.execute('''UPDATE Thread JOIN Post 
+                                    ON Thread.idThread = Post.idThread
+                      SET Thread.isDeleted = true,
+                          Post.isDeleted = true
+                      WHERE Thread.idThread = %d
+                   ''' %idThread )
+
+    code = 0
+    response = { "code": code, "response": request.GET }
+    response = json.dumps(response)
+
+    return HttpResponse(response,content_type="application/json")
+
+def restoreThread(request):#POST
+    cursor = connection.cursor()
+
+    idThread = int(request.GET['thread'])
+
+    cursor.execute('''UPDATE Thread JOIN Post 
+                                    ON Thread.idThread = Post.idThread
+                      SET Thread.isDeleted = false,
+                          Post.isDeleted = false
+                      WHERE Thread.idThread = %d 
+                   ''' %idThread )
+
+    code = 0
+    response = { "code": code, "response": request.GET }
+    response = json.dumps(response)
+
+    return HttpResponse(response,content_type="application/json")
+
     # не реализованы:
     #   listPosts
-    #   remove
     #   restore
   

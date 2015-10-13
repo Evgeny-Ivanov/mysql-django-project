@@ -211,6 +211,7 @@ def listFollowersUser(request):#список подпищиков
 
     responce = DetailsUserWithoutFollowingAndFollowers(cursor,email)
 
+    #видимо надо перестроить запрос так как нам нужны id-шники
     query = '''SELECT follower
                FROM Followers
                WHERE user = '%s'
@@ -220,7 +221,7 @@ def listFollowersUser(request):#список подпищиков
     if limit is not None:
         query += "LIMIT %d "%limit
 
-    if since_id is not None:#?????????????
+    if since_id is not None:#????????????? надо узнать чей это id 
         query += " %s "%since_id
 
     cursor.execute(query)
