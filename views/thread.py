@@ -3,19 +3,23 @@ from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse,HttpRequest
 from django.db import connection
 import json
-from views.ancillary import getBollean,dictfetchall
+from views.ancillary import getBollean,dictfetchall,responseErrorCode
 from views.user import getUserByEmail
 from views.forum import getForumByShortName
 
-def getThreadById(cursor,idThread):
+
+def countPostInThread(cursor,idThread):
     cursor.execute('''SELECT COUNT(*)
                       FROM Post
-                      WHERE idThread = %d 
+                      WHERE idThread = %d AND isDeleted = false
                    ''' % idThread)
-    countPost = cursor.fetchone()[0]
+    return cursor.fetchone()[0]  
+
+def getThreadById(cursor,idThread):
+    countPost = countPostInThread(cursor,idThread)
 
     cursor.execute('''SELECT CAST(dateThread AS CHAR) AS `date`,idThread AS id,isClosed,isDeleted,
-                             message,slug,title,user,forum,points,likes,dislikes
+                             message,slug,title,user,forum,likes,dislikes,likes-dislikes AS points
                       FROM Thread
                       WHERE idThread = %d
                    '''%idThread )
@@ -61,11 +65,12 @@ def insertThread(request):
     responce = json.dumps(responce)
     return HttpResponse(responce,content_type="application/json")
 
-
+@csrf_exempt
 def closeThread(request):
     cursor = connection.cursor()
 
-    idThread = request.GET["thread"]
+    POST = json.loads(request.body)
+    idThread = POST["thread"]
     idThread = int(idThread)
     cursor.execute('''UPDATE Thread
                       SET isClosed = true#возможно надо fasle
@@ -77,10 +82,12 @@ def closeThread(request):
     responce = json.dumps(responce)
     return HttpResponse(responce,content_type="application/json")
 
+@csrf_exempt
 def openThread(request):
     cursor = connection.cursor()
 
-    idThread = request.GET["thread"]
+    POST = json.loads(request.body)
+    idThread = POST["thread"]
     idThread = int(idThread)
     
     cursor.execute('''UPDATE Thread
@@ -94,13 +101,17 @@ def openThread(request):
     return HttpResponse(responce,content_type="application/json")
 
 
-def detailsThread(request):
+def detailsThread(request):#GET
     cursor = connection.cursor()
 
     idThread = int(request.GET["thread"])
     related = request.GET.getlist("related",[])#Possible values: ['user', 'forum']
 
     thread = getThreadById(cursor,idThread)[0]
+
+    checking3 = set(related)-set(['user', 'forum'])
+    if checking3:
+        return HttpResponse(responseErrorCode(3,"thread can not be in related"),content_type="application/json")
 
     if 'user' in related:
         user = getUserByEmail(cursor,thread['user'])[0]
@@ -115,11 +126,13 @@ def detailsThread(request):
     response = json.dumps(response)
     return HttpResponse(response,content_type="application/json")
 
-def voteThread(request):
+@csrf_exempt
+def voteThread(request):#POST
     cursor = connection.cursor()
 
-    idThread = int(request.GET['thread'])
-    vote = int(request.GET['vote'])
+    POST = json.loads(request.body)
+    idThread = int(POST['thread'])
+    vote = int(POST['vote'])
 
     if vote == -1:
         cursor.execute('''UPDATE Thread
@@ -138,12 +151,14 @@ def voteThread(request):
     response = json.dumps(response)
     return HttpResponse(response,content_type="application/json")
 
+@csrf_exempt
 def updateThread(request):#POST
     cursor = connection.cursor()
 
-    idThread = int(request.GET["thread"])
-    message = request.GET["message"]
-    slug = request.GET['slug']
+    POST = json.loads(request.body)
+    idThread = int(POST["thread"])
+    message = POST["message"]
+    slug = POST['slug']
 
     cursor.execute('''UPDATE Thread
                       SET message = '%s',
@@ -157,31 +172,35 @@ def updateThread(request):#POST
     response = json.dumps(response)
     return HttpResponse(response,content_type="application/json")
 
+@csrf_exempt
 def subscribeThread(request):#POST
     cursor = connection.cursor()
 
-    user = request.GET['user']
-    idThread = int(request.GET['thread'])
+    POST = json.loads(request.body)
+    user = POST['user']
+    idThread = int(POST['thread'])
 
-    cursor.execute('''INSERT INTO Subscriptions(user,idThread)
+    cursor.execute('''INSERT IGNORE INTO Subscriptions(user,idThread)
                       VALUES ('%s',%d)
                    ''' % (user,idThread,) )
     code = 0
-    response = { "code": code, "response": request.GET }
+    response = { "code": code, "response": POST }
     response = json.dumps(response)
     return HttpResponse(response,content_type="application/json")
 
+@csrf_exempt
 def unsubscribeThread(request):#POST
     cursor = connection.cursor()
 
-    user = request.GET['user']
-    idThread = int(request.GET['thread'])
+    POST = json.loads(request.body)
+    user = POST['user']
+    idThread = int(POST['thread'])
 
     cursor.execute('''DELETE FROM Subscriptions
                       WHERE user = '%s' AND idThread = %d
                    ''' % (user,idThread,) )
     code = 0
-    response = { "code": code, "response": request.GET }
+    response = { "code": code, "response": POST }
     response = json.dumps(response)
     return HttpResponse(response,content_type="application/json")
 
@@ -200,7 +219,7 @@ def listThread(request):#GET #вроде работает, но на работ�
     order = request.GET.get('order','DESC')#sort order (by date)
 
     query = '''SELECT CAST(dateThread AS CHAR) AS `date`,idThread AS id,isClosed,isDeleted,
-                      message,slug,title,user,forum,points,likes,dislikes,posts
+                      message,slug,title,user,forum,likes - dislikes AS points,likes,dislikes,posts
                FROM Thread 
             '''
 
@@ -223,45 +242,47 @@ def listThread(request):#GET #вроде работает, но на работ�
     cursor.execute(query)
     posts = dictfetchall(cursor)
 
+    for post in posts:
+        post.update({"posts": countPostInThread(cursor,post['id'])})
+
     code = 0
     response = { "code": code, "response": posts }
     response = json.dumps(response)
 
     return HttpResponse(response,content_type="application/json")
 
-
-def removeThread(request):#POST
+@csrf_exempt
+def removeThread(request):#POST #удалил JOIN к POST  - надо исправить
     cursor = connection.cursor()
 
-    idThread = int(request.GET['thread'])
+    POST = json.loads(request.body)
+    idThread = int(POST['thread'])
 
-    cursor.execute('''UPDATE Thread JOIN Post 
-                                    ON Thread.idThread = Post.idThread
-                      SET Thread.isDeleted = true,
-                          Post.isDeleted = true
+    cursor.execute('''UPDATE Thread
+                      SET Thread.isDeleted = TRUE
                       WHERE Thread.idThread = %d
                    ''' %idThread )
 
     code = 0
-    response = { "code": code, "response": request.GET }
+    response = { "code": code, "response": POST }
     response = json.dumps(response)
 
     return HttpResponse(response,content_type="application/json")
 
+@csrf_exempt
 def restoreThread(request):#POST
     cursor = connection.cursor()
 
-    idThread = int(request.GET['thread'])
+    POST = json.loads(request.body)
+    idThread = int(POST['thread'])
 
-    cursor.execute('''UPDATE Thread JOIN Post 
-                                    ON Thread.idThread = Post.idThread
-                      SET Thread.isDeleted = false,
-                          Post.isDeleted = false
+    cursor.execute('''UPDATE Thread
+                      SET Thread.isDeleted = FALSE
                       WHERE Thread.idThread = %d 
                    ''' %idThread )
 
     code = 0
-    response = { "code": code, "response": request.GET }
+    response = { "code": code, "response": POST }
     response = json.dumps(response)
 
     return HttpResponse(response,content_type="application/json")
@@ -282,7 +303,7 @@ def listPosts(request):#не реализован parent_tree
     sort = request.GET.get('sort',None)
 
     query = '''SELECT  idPost AS id,forum,idThread AS thread,Post.user,parent,CAST(datePost AS CHAR) AS `date`,message,
-                       isEdited,isDeleted,isSpam,isHighlighted,isApproved,likes,dislikes,points
+                       isEdited,isDeleted,isSpam,isHighlighted,isApproved,likes,dislikes,likes - dislikes AS points
                FROM Post 
                WHERE idThread = %d
             ''' %thread

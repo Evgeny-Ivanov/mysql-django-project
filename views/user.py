@@ -44,7 +44,7 @@ def DetailsUserWithoutFollowingAndFollowers(cursor,email):
                       FROM Subscriptions
                       WHERE user = '%s'
                    ''' % (email,))
-    subscriptions = cursor.fetchall()
+    subscriptions = [item[0] for item in cursor.fetchall()]
 
     cursor.execute('''SELECT username,about,name,isAnonymous,idUser 
                       FROM User
@@ -77,20 +77,20 @@ def DetailsUser(cursor,email):#GET
                                      ON Followers.follower = User.email
                       WHERE Followers.user = '%s'
                    ''' % (email,))
-    following = cursor.fetchall()
+    following = [item[0] for item in cursor.fetchall()]
 
     cursor.execute('''SELECT User.email
                       FROM Followers JOIN User
                                      ON Followers.user = User.email
                       WHERE Followers.follower = '%s'
                    ''' % (email,))
-    followers = cursor.fetchall()
+    followers = [item[0] for item in cursor.fetchall()]
 
     cursor.execute('''SELECT idThread
                       FROM Subscriptions
                       WHERE user = '%s'
                    ''' % (email,))
-    subscriptions = cursor.fetchall()
+    subscriptions = [item[0] for item in cursor.fetchall()]#как это работает ?
 
     cursor.execute('''SELECT username,about,name,isAnonymous,idUser
                       FROM User
@@ -175,11 +175,13 @@ def detailsUser(request):
     responce = json.dumps(DetailsUser(cursor,email))
     return HttpResponse(responce,content_type="application/json")
 
-def followUser(request):
+@csrf_exempt
+def followUser(request):#POST
     cursor = connection.cursor()
 
-    followerEmail = request.GET["follower"]
-    followeeEmail = request.GET['followee']
+    POST = json.loads(request.body)
+    followerEmail = POST["follower"]
+    followeeEmail = POST['followee']
 
 
     cursor.execute('''INSERT INTO Followers
@@ -190,12 +192,15 @@ def followUser(request):
     responce = json.dumps(responce)
     return HttpResponse(responce,content_type="application/json")
 
-def updateProfile(request):
+@csrf_exempt
+def updateProfile(request):#POST
     cursor = connection.cursor()
 
-    about = request.GET["about"]
-    name = request.GET["name"]
-    email = request.GET["user"]
+    POST = json.loads(request.body)
+
+    about = POST["about"]
+    name = POST["name"]
+    email = POST["user"]
 
     cursor.execute('''UPDATE User
                       SET about = '%s',
@@ -207,11 +212,13 @@ def updateProfile(request):
     responce = json.dumps(responce)
     return HttpResponse(responce,content_type="application/json")
 
+@csrf_exempt
 def unfollowUser(request):#все скорее всего напутано
     cursor = connection.cursor()
 
-    followeeEmail = request.GET['followee']
-    followerEmail = request.GET["follower"]
+    POST = json.loads(request.body)
+    followerEmail = POST["follower"]
+    followeeEmail = POST['followee']
 
     cursor.execute('''DELETE FROM Followers
                       WHERE user = '%s' AND follower = '%s';
@@ -305,17 +312,19 @@ def listPostsUser(request):
     limit = request.GET.get("limit", None)
     since = request.GET.get("since", None)#дата посты старше которых нужно вывести
 
-    query = '''SELECT *
+    query = '''SELECT idPost AS id,forum,idThread AS thread,Post.user,parent,CAST(datePost AS CHAR) AS `date`,
+                      message,isEdited,isDeleted,isSpam,isHighlighted,isApproved,likes,dislikes,likes-dislikes AS points
                FROM Post 
                WHERE user = '%s'
-               ORDER BY user %s
-            ''' % (email,order)
-
-    if limit is not None:
-        query += "LIMIT %d "%limit
+            ''' % email
 
     if since is not None:
-        query += "AND `datePost` >= %s "%since
+        query += " AND `datePost` >= '%s' "%since
+
+    query +=" ORDER BY user %s " %order
+
+    if limit is not None:
+        query += " LIMIT %d "%int(limit)
 
     cursor.execute(query)
     response = dictfetchall(cursor)

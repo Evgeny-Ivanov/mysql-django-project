@@ -3,7 +3,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse,HttpRequest
 from django.db import connection
 import json
-from views.ancillary import getBollean,dictfetchall
+from views.ancillary import getBollean,dictfetchall,responseErrorCode
 from views.user import getUserByEmail
 from views.thread import getThreadById
 from views.forum import getForumByShortName
@@ -96,7 +96,7 @@ def insertPost(request):
 
 def getPostById(cursor,idPost):
     cursor.execute('''SELECT idPost AS id,forum,idThread AS thread,Post.user,parent,CAST(datePost AS CHAR) AS `date`,
-                             message,isEdited,isDeleted,isSpam,isHighlighted,isApproved,likes,dislikes,points
+                             message,isEdited,isDeleted,isSpam,isHighlighted,isApproved,likes,dislikes,likes-dislikes AS points
                       FROM Post
                       WHERE Post.idPost = %d
                    '''%(idPost,))
@@ -108,10 +108,7 @@ def detailsPost(request):
     related = request.GET.getlist("related",[])#['user', 'thread', 'forum']
     post = getPostById(cursor,idPost)
     if not post:
-        code = 1
-        response = { "code": code, "response": "error id is not exist"}
-        response = json.dumps(response)
-        return HttpResponse(response,content_type="application/json")
+        return HttpResponse(responseErrorCode(1,"error id is not exist"),content_type="application/json")
     post = post[0]
 
     if 'user' in related:
@@ -131,10 +128,12 @@ def detailsPost(request):
     response = json.dumps(response)
     return HttpResponse(response,content_type="application/json")
 
+@csrf_exempt
 def removePost(request):#POST
     cursor = connection.cursor()
 
-    idPost = int(request.GET["post"])
+    POST = json.loads(request.body)
+    idPost = int(POST["post"])
     #если я буду хранить количество постов в теме то тогда надо будут обновить и тему
     cursor.execute('''UPDATE Post
                       SET isDeleted = true
@@ -145,10 +144,12 @@ def removePost(request):#POST
     response = json.dumps(response)
     return HttpResponse(response,content_type="application/json")
 
-def restorePost(request):#копия прошлого  
+@csrf_exempt
+def restorePost(request):#POST
     cursor = connection.cursor()
 
-    idPost = int(request.GET["post"])
+    POST = json.loads(request.body)
+    idPost = int(POST["post"])
     #если я буду хранить количество постов в теме то тогда надо будут обновить и тему
     cursor.execute('''UPDATE Post
                       SET isDeleted = false
@@ -159,11 +160,13 @@ def restorePost(request):#копия прошлого
     response = json.dumps(response)
     return HttpResponse(response,content_type="application/json")
 
+@csrf_exempt
 def updatePost(request):#POST
     cursor = connection.cursor()
 
-    idPost = int(request.GET["post"])
-    message = request.GET["message"]
+    POST = json.loads(request.body)
+    idPost = int(POST["post"])
+    message = POST["message"]
 
     cursor.execute('''UPDATE Post
                       SET message = '%s'
@@ -176,11 +179,13 @@ def updatePost(request):#POST
     response = json.dumps(response)
     return HttpResponse(response,content_type="application/json")
 
-def votePost(request):#голосовать за пост 
+@csrf_exempt
+def votePost(request):#POST
     cursor = connection.cursor()
 
-    idPost = int(request.GET['post'])
-    vote = int(request.GET['vote'])
+    POST = json.loads(request.body)
+    idPost = int(POST['post'])
+    vote = int(POST['vote'])
 
     if vote == -1:
         cursor.execute('''UPDATE Post

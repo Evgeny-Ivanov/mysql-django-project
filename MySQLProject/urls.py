@@ -49,6 +49,7 @@ from views.thread import updateThread
 from views.thread import subscribeThread,unsubscribeThread
 from views.thread import listThread
 from views.thread import removeThread,restoreThread
+from views.thread import listPosts
 
 #Post
 from views.post import insertPost
@@ -90,6 +91,7 @@ urlpatterns = [
     url('^db/api/thread/list/$',listThread),
     url('^db/api/thread/remove/$',removeThread),
     url('^db/api/thread/restore/$',restoreThread),
+    url('^db/api/thread/listPosts/$',listPosts),
 
     #Post
     url('^db/api/post/create/$',insertPost),

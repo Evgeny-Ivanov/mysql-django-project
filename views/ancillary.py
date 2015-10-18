@@ -12,6 +12,10 @@ def helperQuotes(string):
     else:
         return '''"%s"''' % string
 
+def responseErrorCode(code,error):
+    response = { "code": code, "response": error}
+    response = json.dumps(response)
+    return response
 
 @csrf_exempt
 def status(request):
