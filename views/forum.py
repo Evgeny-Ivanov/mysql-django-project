@@ -8,7 +8,23 @@ from views.ancillary import dictfetchall
 from views.user import DetailsUser
 from views.user import getFollowers
 from views.user import getFollowing
-from views.user import getSubscriptions
+from views.user import getSubscriptions,getUserByEmail
+
+
+def countPostInThread(cursor,idThread):
+    cursor.execute('''SELECT COUNT(*)
+                      FROM Post
+                      WHERE idThread = %d AND isDeleted = false
+                   ''' % idThread)
+    return cursor.fetchone()[0]  
+
+
+def countPostInForum(cursor,forum):
+    cursor.execute('''SELECT COUNT(*)
+                      FROM Post
+                      WHERE forum = '%s' AND isDeleted = false
+                   ''' % forum)
+    return cursor.fetchone()[0]  
 
 
 def getForumByShortName(cursor,shortName):
@@ -139,7 +155,7 @@ def listThreadsInForum(request):
 
     #что такое posts и points?
     query = '''SELECT CAST(Thread.dateThread AS CHAR) AS `date`,idThread AS id,isClosed,isDeleted,
-                      message,slug,title,Thread.user,Thread.forum,points,likes,dislikes,posts
+                      message,slug,title,Thread.user,Thread.forum,likes - dislikes AS points,likes,dislikes
                FROM Forum JOIN Thread
                           ON Forum.short_name = Thread.forum
                WHERE Forum.short_name = '%s'
@@ -159,20 +175,15 @@ def listThreadsInForum(request):
 
     for thread in threads:
         if 'user' in related:
-            cursor.execute('''SELECT * 
-                              FROM User
-                              WHERE email = '%s'
-                          '''%(thread['user'],))
-            user = dictfetchall(cursor)
-            thread.update({'user': user[0]})
+            user = getUserByEmail(cursor,thread['user'])[0]
+            thread.update({'user': user})
 
         if 'forum' in related:
-            cursor.execute('''SELECT * 
-                              FROM Forum
-                              WHERE short_name = '%s'
-                           '''%(thread['forum'],))
-            forum = dictfetchall(cursor)
-            thread.update({'forum': forum[0]})
+            forum = getForumByShortName(cursor,thread['forum'])[0]
+            forum.update({"posts": countPostInForum(cursor,forum['short_name'])})
+            thread.update({'forum': forum})
+
+        thread.update({"posts": countPostInThread(cursor,thread['id'])})
 
     code = 0
     responce = { "code": code, "response": threads }
@@ -217,16 +228,17 @@ def listPostsInForum(request):
                               FROM User
                               WHERE email = '%s'
                           '''%(post['user'],))
-            user = dictfetchall(cursor)
-            post.update({'user': user[0]})
+            user = dictfetchall(cursor)[0]
+            post.update({'user': user})
 
         if 'forum' in related:
             cursor.execute('''SELECT * 
                               FROM Forum
                               WHERE short_name = '%s'
                            '''%(post['forum'],))
-            forum = dictfetchall(cursor)
-            post.update({'forum': forum[0]})
+            forum = dictfetchall(cursor)[0]
+            forum.update({"posts": countPostInForum(cursor,forum['short_name'])})
+            post.update({'forum': forum})
 
         if 'thread' in related:
             cursor.execute('''SELECT CAST(dateThread AS CHAR) AS `date`,idThread AS id,isClosed,isDeleted,
@@ -234,8 +246,9 @@ def listPostsInForum(request):
                               FROM Thread
                               WHERE idThread = %d
                            '''%(post['thread'],))
-            thread = dictfetchall(cursor)
-            post.update({'thread': thread[0]})
+            thread = dictfetchall(cursor)[0]
+            thread.update({"posts": countPostInThread(cursor,thread['id'])})
+            post.update({'thread': thread})
 
 
     code = 0

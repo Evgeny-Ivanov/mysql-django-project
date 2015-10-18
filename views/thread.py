@@ -258,8 +258,10 @@ def removeThread(request):#POST #удалил JOIN к POST  - надо испр�
     POST = json.loads(request.body)
     idThread = int(POST['thread'])
 
-    cursor.execute('''UPDATE Thread
-                      SET Thread.isDeleted = TRUE
+    cursor.execute('''UPDATE Thread JOIN Post
+                                    ON Post.idThread = Thread.idThread
+                      SET Thread.isDeleted = 1,
+                          Post.isDeleted = 1
                       WHERE Thread.idThread = %d
                    ''' %idThread )
 
@@ -276,11 +278,12 @@ def restoreThread(request):#POST
     POST = json.loads(request.body)
     idThread = int(POST['thread'])
 
-    cursor.execute('''UPDATE Thread
-                      SET Thread.isDeleted = FALSE
-                      WHERE Thread.idThread = %d 
+    cursor.execute('''UPDATE Thread JOIN Post
+                                    ON Post.idThread = Thread.idThread
+                      SET Thread.isDeleted = 0,
+                          Post.isDeleted = 0
+                      WHERE Thread.idThread = %d
                    ''' %idThread )
-
     code = 0
     response = { "code": code, "response": POST }
     response = json.dumps(response)
@@ -300,7 +303,7 @@ def listPosts(request):#не реализован parent_tree
     if limit is not None:
         limit = int(limit)
     order = request.GET.get('order','DESC')#sort order (by date)
-    sort = request.GET.get('sort',None)
+    sort = request.GET.get('sort','flat')
 
     query = '''SELECT  idPost AS id,forum,idThread AS thread,Post.user,parent,CAST(datePost AS CHAR) AS `date`,message,
                        isEdited,isDeleted,isSpam,isHighlighted,isApproved,likes,dislikes,likes - dislikes AS points
@@ -317,9 +320,10 @@ def listPosts(request):#не реализован parent_tree
         if sort == 'tree':
             query += "ORDER BY `path` %s"%order
         if sort == 'parent_tree':#тут надо доработать
-            query += "ORDER BY `path` %s"%order
+            query += ''' AND CAST( LEFT( `path`, INSTR(`path`,".")-1 ) AS INT ) > %d
+                         ORDER BY `path` %s''' % (limit,order)
 
-    if limit is not None:
+    if limit is not None and not sort ==  'parent_tree':
         query += " LIMIT %d "%limit
 
     cursor.execute(query)
