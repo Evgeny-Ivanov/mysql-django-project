@@ -6,6 +6,14 @@ from django.shortcuts import render
 from django.db import connection
 import json
 
+def helperQuotes(string):
+    if string is None:
+        return 'NULL'
+    else:
+        return '''"%s"''' % string
+
+
+@csrf_exempt
 def status(request):
     cursor = connection.cursor()
 
@@ -37,8 +45,8 @@ def status(request):
     responce = json.dumps(responce)
     return HttpResponse(responce,content_type="application/json")
 
-
-def clear(request):
+@csrf_exempt
+def clear(request):#POST
     cursor = connection.cursor()
 
     cursor.execute('''DELETE FROM Post

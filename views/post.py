@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse,HttpRequest
 from django.db import connection
 import json
@@ -7,52 +8,82 @@ from views.user import getUserByEmail
 from views.thread import getThreadById
 from views.forum import getForumByShortName
 
-def insertPost(request):#работает, но нужно разобраться с path
+
+@csrf_exempt
+def insertPost(request):
     cursor = connection.cursor()
 
-    message = request.GET["message"]
-    datePost = request.GET["date"]
-    email = request.GET["user"]
-    idThread = int(request.GET["thread"])
-    forum = request.GET["forum"]
-    parent = request.GET.get("parent",None)#None == NULL ?
+
+    POST = json.loads(request.body)
+
+    message = POST["message"]
+    datePost = POST["date"]
+    email = POST["user"]
+    idThread = int(POST["thread"])
+    forum = POST["forum"]
+    parent = POST.get("parent",None)#None == NULL ?
     if parent is not None:
         parent = int(parent)
 
-    isApproved = request.GET.get("isApproved",0)
+    isApproved = POST.get("isApproved",0)
     isApproved = getBollean(isApproved)
 
-    isDeleted = request.GET.get("isDeleted",0)
+    isDeleted = POST.get("isDeleted",0)
     isDeleted = getBollean(isDeleted)
 
-    isEdited = request.GET.get("isEdited",0)
+    isEdited = POST.get("isEdited",0)
     isEdited = getBollean(isEdited)
 
-    isHighlighted = request.GET.get("isHighlighted",0)
+    isHighlighted = POST.get("isHighlighted",0)
     isHighlighted = getBollean(isHighlighted)
 
-    isSpam = request.GET.get("isSpam",0)
+    isSpam = POST.get("isSpam",0)
     isSpam = getBollean(isSpam)
 
-
-    path = ' '#эту штуку видимо надо генерить исходя из path родителя 
-              #нужно будет для сортировки
-
-    #костыль чтоб записать в Parent NULL
+    ###########
     if parent is None:
-        cursor.execute('''INSERT INTO Post(forum, idThread, user, datePost, message,  isEdited, isDeleted, isSpam,  isHighlighted, isApproved , `path`) 
-                          VALUES          ( '%s',    '%d',  '%s',    '%s'  ,  '%s'     ,'%d'      ,'%d'  , '%d'   ,   '%d'       ,    '%d'    , '%s'  );
-                       '''              % (forum, idThread, email, datePost, message, isEdited, isDeleted, isSpam,  isHighlighted,  isApproved, path  )) 
+        level = 1
+        cursor.execute('''SELECT COUNT(*) + 1
+                          FROM Post 
+                          WHERE level = %d
+                       ''' %level )
+        number = cursor.fetchone()[0]
+        path = str(number)
     else:
-        cursor.execute('''INSERT INTO Post(forum, idThread, user, datePost, message,  isEdited, isDeleted, isSpam,  isHighlighted, isApproved, parent  , `path`) 
-                          VALUES          ( '%s',    '%d',  '%s',    '%s'  ,  '%s'     ,'%d'      ,'%d'  , '%d'   ,   '%d'       ,    '%d'    , '%s'   , '%s'  );
-                       '''              % (forum, idThread, email, datePost, message, isEdited, isDeleted, isSpam,  isHighlighted,  isApproved, parent , path  ))
+        cursor.execute('''SELECT `path`,level
+                          FROM Post
+                          WHERE idPost = %d
+                      ''' %parent )
+        pathResponse = cursor.fetchall()[0]
+        pathParent = pathResponse[0]
+        level = int(pathResponse[1])+1
+        cursor.execute('''SELECT COUNT(*)
+                          FROM Post
+                          WHERE level = %d AND parent = %d
+                       ''' %(level,parent))
+        countThisLevelPost = cursor.fetchone()[0]
+        countThisLevelPost = int(countThisLevelPost)
+        path = pathParent + '.' + str(countThisLevelPost+1)
+    ##вроде работает но слишком много запросов 
+    ########### path и level получены,но надо в десятичной системе -
+    ########### максимум сколько можно коментариев на коментарий - 10 
+    ########### нужно перевести в другую
 
-    requestCopy = request.GET.copy()
+    if parent is None:
+        cursor.execute('''INSERT INTO Post(forum, idThread, user, datePost, message,  isEdited, isDeleted, isSpam,  isHighlighted, isApproved , `path`,level) 
+                          VALUES          ( '%s',    '%d',  '%s',    '%s'  ,  '%s'     ,'%d'      ,'%d'  , '%d'   ,   '%d'       ,    '%d'    , '%s', %d  );
+                       '''              % (forum, idThread, email, datePost, message, isEdited, isDeleted, isSpam,  isHighlighted,  isApproved, path, level  )) 
+    else:
+        cursor.execute('''INSERT INTO Post(forum, idThread, user, datePost, message,  isEdited, isDeleted, isSpam,  isHighlighted, isApproved, parent  , `path`,level) 
+                          VALUES          ( '%s',    '%d',  '%s',    '%s'  ,  '%s'     ,'%d'      ,'%d'  , '%d'   ,   '%d'       ,    '%d'    , '%s'   , '%s',   %d );
+                       '''              % (forum, idThread, email, datePost, message, isEdited, isDeleted, isSpam,  isHighlighted,  isApproved, parent , path ,  level ))
 
+   
     cursor.execute('''SELECT LAST_INSERT_ID();
                    ''')
     idPost = cursor.fetchone()[0]
+
+    requestCopy = request.GET.copy()
 
     requestCopy.__setitem__('id',idPost)
     requestCopy.__setitem__('parent',parent)
@@ -75,7 +106,13 @@ def detailsPost(request):
     cursor = connection.cursor()
     idPost = int(request.GET["post"])
     related = request.GET.getlist("related",[])#['user', 'thread', 'forum']
-    post = getPostById(cursor,idPost)[0]
+    post = getPostById(cursor,idPost)
+    if not post:
+        code = 1
+        response = { "code": code, "response": "error id is not exist"}
+        response = json.dumps(response)
+        return HttpResponse(response,content_type="application/json")
+    post = post[0]
 
     if 'user' in related:
         user = getUserByEmail(cursor,post['user'])

@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
+from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse,HttpRequest
 from django.db import connection
 import json
 from views.ancillary import dictfetchall
-from views.ancillary import getBollean
+from views.ancillary import getBollean,helperQuotes
 
 
 def getUserByEmail(cursor,email):
@@ -69,7 +70,7 @@ def DetailsUserWithoutFollowingAndFollowers(cursor,email):
     }}
     return responce
 
-def DetailsUser(cursor,email):
+def DetailsUser(cursor,email):#GET
 
     cursor.execute('''SELECT User.email
                       FROM Followers JOIN User
@@ -121,23 +122,42 @@ def DetailsUser(cursor,email):
 ################################
 ###дальше функции обработки url
 ################################
+###curl -H "Content-Type: application/json" -X POST -d ' {"username": "user1", "about": "hello im user1", "isAnonymous": false, "name": "John", "email": "example@mail.ru"}' http://localhost:8888/db/api/user/create/
+################################
 
+
+@csrf_exempt
 def insertUser(request):#?username=user1&about=hello im user1&isAnonymous=false&name=John&email=example@mail.ru
     cursor = connection.cursor()
 
-    username = request.GET["username"]
-    about = request.GET["about"]
-    name = request.GET["name"]
-    email = request.GET["email"]
-    isAnonymous = request.GET["isAnonymous"]
+    POST = json.loads(request.body)
+    username = POST.get('username',None)
+    about = POST.get('about',None)
+    name = POST.get('name',None)
+    email = POST['email']
+    isAnonymous = POST.get('isAnonymous',False)
     isAnonymous =getBollean(isAnonymous)
 
-    cursor.execute('''INSERT INTO User(username,about,name,email,isAnonymous) 
-                      VALUES ('%s','%s','%s','%s','%d');
-                   ''' % (username,about,name,email,isAnonymous,)) 
+    cursor.execute('''SELECT *
+                      FROM User
+                      WHERE email = '%s'
+                   ''' %email)
+    user =  cursor.fetchone()
+    if user:
+        code = 5
+        responce = { "code": code, "response": "user exist" }
+        responce = json.dumps(responce)
+        return HttpResponse(responce,content_type="application/json")
 
-    idUser = getIdUser(cursor,email)
+    cursor.execute('''INSERT INTO User(email,username,about,name,isAnonymous) 
+                      VALUES ('%s',%s,%s,%s,%d);
+                   ''' % (email,helperQuotes(username),helperQuotes(about),helperQuotes(name),isAnonymous,)) 
 
+    cursor.execute('''SELECT idUser
+                      FROM User
+                      WHERE email = '%s'
+                   ''' %email)
+    idUser =  cursor.fetchone()[0]
 
     requestCopy = request.GET.copy()
     requestCopy.__setitem__('id',idUser)#setdefault()
@@ -152,7 +172,7 @@ def detailsUser(request):
     #Following – ваши подписки или люди, которых вы читаете
     #Followers – это ваши читатели
     email = request.GET["user"]
-    responce = json.dumps(responce)
+    responce = json.dumps(DetailsUser(cursor,email))
     return HttpResponse(responce,content_type="application/json")
 
 def followUser(request):

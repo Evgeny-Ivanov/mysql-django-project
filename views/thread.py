@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse,HttpRequest
 from django.db import connection
 import json
@@ -7,30 +8,42 @@ from views.user import getUserByEmail
 from views.forum import getForumByShortName
 
 def getThreadById(cursor,idThread):
+    cursor.execute('''SELECT COUNT(*)
+                      FROM Post
+                      WHERE idThread = %d 
+                   ''' % idThread)
+    countPost = cursor.fetchone()[0]
+
     cursor.execute('''SELECT CAST(dateThread AS CHAR) AS `date`,idThread AS id,isClosed,isDeleted,
-                             message,slug,title,user,forum,points,likes,dislikes,posts
+                             message,slug,title,user,forum,points,likes,dislikes
                       FROM Thread
                       WHERE idThread = %d
                    '''%idThread )
-    return dictfetchall(cursor)
+    response = dictfetchall(cursor)
+    response[0].setdefault('posts',countPost)
+    return response
 
-def insertThread(request):#?forum=name&title=Thread With Sufficiently Large Title&isClosed=true&user=example3@mail.ru&date=2014-01-01 00:00:01&message=hey hey hey hey!&slug=Threadwithsufficientlylargetitle&isDeleted=true
+#{"forum": "forum1", "title": "Thread With Sufficiently Large Title", "isClosed": true, "user": "example3@mail.ru", "date": "2014-01-01 00:00:01", "message": "hey hey hey hey!", "slug": "Threadwithsufficientlylargetitle", "isDeleted": true}
+
+@csrf_exempt
+def insertThread(request):
     cursor = connection.cursor()
     #Тред везде индентефицируется по id => возможно(????)
     #нужно следить что бы не было ошибок во избежание произвольного автоинкементирования
     #возможно нужно вообще убрать автоикремент 
 
-    forum = request.GET["forum"]
-    title = request.GET["title"]
-    email = request.GET["user"]
-    dateThread = request.GET["date"]
-    message = request.GET["message"]
-    slug = request.GET["slug"]
+    POST = json.loads(request.body)
+    forum = POST["forum"]
+    title = POST["title"]
+    email = POST["user"]
+    dateThread = POST["date"]
+    message = POST["message"]
+    slug = POST["slug"]
 
-    isClosed = request.GET.get("isClosed",0)
+    isClosed = POST.get("isClosed",0)
     isClosed = getBollean(isClosed)
 
-    isDeleted = request.GET.get("isDeleted",0)
+    isDeleted = POST.get("isDeleted",0)
     isDeleted = getBollean(isDeleted)
 
     cursor.execute('''INSERT INTO Thread(forum,user,title,slug,message,dateThread,isClosed,isDeleted) 
@@ -255,5 +268,45 @@ def restoreThread(request):#POST
 
     # не реализованы:
     #   listPosts
-    #   restore
+
+def listPosts(request):#не реализован parent_tree
+    cursor = connection.cursor()
+    #Requried
+    thread = int(request.GET.get('thread',None))
+    #Optional
+    since = request.GET.get('since',None)
+    limit = request.GET.get('limit',None)
+    if limit is not None:
+        limit = int(limit)
+    order = request.GET.get('order','DESC')#sort order (by date)
+    sort = request.GET.get('sort',None)
+
+    query = '''SELECT  idPost AS id,forum,idThread AS thread,Post.user,parent,CAST(datePost AS CHAR) AS `date`,message,
+                       isEdited,isDeleted,isSpam,isHighlighted,isApproved,likes,dislikes,points
+               FROM Post 
+               WHERE idThread = %d
+            ''' %thread
+
+    if since is not None:
+        query += "AND `datePost` >= '%s' "%since
+
+    if sort is not None:
+        if sort == 'flat':
+            query += "ORDER BY datePost %s"%order
+        if sort == 'tree':
+            query += "ORDER BY `path` %s"%order
+        if sort == 'parent_tree':#тут надо доработать
+            query += "ORDER BY `path` %s"%order
+
+    if limit is not None:
+        query += " LIMIT %d "%limit
+
+    cursor.execute(query)
+    posts = dictfetchall(cursor)
+
+    code = 0
+    response = { "code": code, "response": posts }
+    response = json.dumps(response)
+
+    return HttpResponse(response,content_type="application/json")
   

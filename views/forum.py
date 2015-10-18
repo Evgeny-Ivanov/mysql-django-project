@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse,HttpRequest,JsonResponse
 from django.db import connection
 import json
@@ -17,12 +18,15 @@ def getForumByShortName(cursor,shortName):
                    '''%(shortName,))
     return dictfetchall(cursor)
 
+@csrf_exempt
 def insertForum(request):#insertForum?name=Forum With Sufficiently Large Name3&short_name=forumwithsufficientlylargename3&user=example3@mail.ru
     cursor = connection.cursor()
 
-    name = request.GET["name"]
-    shortName = request.GET["short_name"]
-    email = request.GET["user"]#user = email
+    POST = json.loads(request.body)
+
+    name = POST["name"]
+    shortName = POST["short_name"]
+    email = POST["user"]#user = email
 
     cursor.execute('''INSERT INTO Forum(name,short_name,user) 
                       VALUES ('%s','%s','%s');
@@ -43,10 +47,10 @@ def insertForum(request):#insertForum?name=Forum With Sufficiently Large Name3&s
     return HttpResponse(responce,content_type="application/json")
 
 
-def detailsForum(request):
+def detailsForum(request):#GET
     cursor = connection.cursor()
 
-    shortName = request.GET['short_name']
+    shortName = request.GET['forum']
     related = request.GET.getlist('related',[])
 
 
