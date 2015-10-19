@@ -236,10 +236,10 @@ def listFollowersUser(request):#список подпищиков
     limit = request.GET.get("limit", None)
     since_id = request.GET.get("since_id", None)
 
-    responce = DetailsUserWithoutFollowingAndFollowers(cursor,email)
+    #responce = DetailsUserWithoutFollowingAndFollowers(cursor,email)
 
     #видимо надо перестроить запрос так как нам нужны id-шники
-    query = '''SELECT follower
+    query = '''SELECT follower as email
                FROM Followers JOIN User 
                               ON Followers.follower = User.email
                WHERE user = '%s' 
@@ -254,15 +254,16 @@ def listFollowersUser(request):#список подпищиков
         query += " LIMIT %d "%int(limit)
 
     cursor.execute(query)
-    followers = [item[0] for item in cursor.fetchall()]
+    #followers = [item[0] for item in cursor.fetchall()]
 
-    following = getFollowing(cursor,email)
+    users = dictfetchall(cursor)
 
-    responce.update({"followers": followers})
-    responce.update({"following": following})
+    for user in users:
+        infoUser = DetailsUser(cursor,user["email"])["response"]
+        user.update(infoUser)
 
     code = 0
-    responce = { "code": code, "response":responce }
+    responce = { "code": code, "response":users }
     responce = json.dumps(responce)
     return HttpResponse(responce,content_type="application/json")
 
@@ -275,9 +276,7 @@ def listFollowingUser(request):
     limit = request.GET.get("limit", None)
     since_id = request.GET.get("since_id", None)
 
-    responce = DetailsUserWithoutFollowingAndFollowers(cursor,email)
-
-    query = '''SELECT user
+    query = '''SELECT user AS email
                FROM Followers JOIN User
                               ON Followers.user = User.email
                WHERE follower = '%s'
@@ -293,17 +292,17 @@ def listFollowingUser(request):
 
 
     cursor.execute(query)
-    following = [item[0] for item in cursor.fetchall()]
+    #following = [item[0] for item in cursor.fetchall()]
+    users = dictfetchall(cursor)
 
-    followers = getFollowing(cursor,email)
-
-    responce.update({"followers": followers})
-    responce.update({"following": following})
+    for user in users:
+        infoUser = DetailsUser(cursor,user["email"])["response"]
+        user.update(infoUser)
 
     code = 0
-    responce = { "code": code, "response":responce }
-    responce = json.dumps(responce)
-    return HttpResponse(responce,content_type="application/json")
+    response = { "code": code, "response":users }
+    response = json.dumps(response)
+    return HttpResponse(response,content_type="application/json")
 
 def listPostsUser(request):
     cursor = connection.cursor()
