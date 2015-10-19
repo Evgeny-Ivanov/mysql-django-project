@@ -137,7 +137,8 @@ def listUsersInForum(request):#вроде работает, но вывод foll
     response = json.dumps(response)
 
     return HttpResponse(response,content_type="application/json")
-
+    
+    from django.http import JsonResponse
 
 def listThreadsInForum(request):
     cursor = connection.cursor()
@@ -188,8 +189,7 @@ def listThreadsInForum(request):
     code = 0
     responce = { "code": code, "response": threads }
     responce = json.dumps(responce)
-
-    return HttpResponse(responce,content_type="application/json")
+    return HttpResponse(responce,content_type="application/json; charset=ascii")
 
 def listPostsInForum(request):
     cursor = connection.cursor()
@@ -204,7 +204,7 @@ def listPostsInForum(request):
 
     #datetime.datetime(2014, 1, 1, 0, 0, 1, tzinfo=<UTC>) is not JSON serializable - костыль - перечисление всех полей
     query = '''SELECT  idPost AS id,forum,idThread AS thread,Post.user,parent,CAST(datePost AS CHAR) AS `date`,message,
-                       isEdited,isDeleted,isSpam,isHighlighted,isApproved,likes,dislikes,points
+                       isEdited,isDeleted,isSpam,isHighlighted,isApproved,likes,dislikes, likes - dislikes AS points
                FROM Forum JOIN Post
                           ON Forum.short_name = Post.forum
                WHERE Forum.short_name = '%s'
@@ -224,25 +224,17 @@ def listPostsInForum(request):
 
     for post in posts:
         if 'user' in related:
-            cursor.execute('''SELECT * 
-                              FROM User
-                              WHERE email = '%s'
-                          '''%(post['user'],))
-            user = dictfetchall(cursor)[0]
+            user = getUserByEmail(cursor,post['user'])[0]
             post.update({'user': user})
 
         if 'forum' in related:
-            cursor.execute('''SELECT * 
-                              FROM Forum
-                              WHERE short_name = '%s'
-                           '''%(post['forum'],))
-            forum = dictfetchall(cursor)[0]
+            forum = getForumByShortName(cursor,post["forum"])[0]
             forum.update({"posts": countPostInForum(cursor,forum['short_name'])})
             post.update({'forum': forum})
 
         if 'thread' in related:
             cursor.execute('''SELECT CAST(dateThread AS CHAR) AS `date`,idThread AS id,isClosed,isDeleted,
-                                     message,slug,title,user,forum,points,likes,dislikes,posts
+                                     message,slug,title,user,forum,likes,dislikes,posts,likes - dislikes AS points
                               FROM Thread
                               WHERE idThread = %d
                            '''%(post['thread'],))

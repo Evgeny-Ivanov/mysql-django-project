@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+#encoding: utf-8
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse,HttpRequest
 from django.db import connection
