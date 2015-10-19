@@ -1,10 +1,11 @@
-#encoding: utf-8
+# -*- coding: utf-8 -*-
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse,HttpRequest
 from django.db import connection
 import json
 from views.ancillary import dictfetchall
 from views.ancillary import getBollean,helperQuotes
+from django.http import JsonResponse
 
 
 
@@ -321,7 +322,7 @@ def listPostsUser(request):
     if since is not None:
         query += " AND `datePost` >= '%s' "%since
 
-    query +=" ORDER BY user %s " %order
+    query +=" ORDER BY datePost %s " %order
 
     if limit is not None:
         query += " LIMIT %d "%int(limit)
@@ -331,7 +332,7 @@ def listPostsUser(request):
 
     code = 0
     response = { "code": code, "response":response }
-    response = json.dumps(response)
+    response = json.dumps(response,ensure_ascii=False, encoding='utf8')
     return HttpResponse(response,content_type="application/json")
 
 

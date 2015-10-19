@@ -81,7 +81,11 @@ DATABASES = {
         'USER': 'root',
         'PASSWORD': '1',
         'HOST':'localhost',
+        'OPTIONS' : { 
+            'charset': 'utf8',
+        },   
     }
+
 }
 
 # Internationalization

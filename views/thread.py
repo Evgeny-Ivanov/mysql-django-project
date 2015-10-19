@@ -1,4 +1,4 @@
-#encoding: utf-8
+# -*- coding: utf-8 -*-
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse,HttpRequest
 from django.db import connection
@@ -11,7 +11,7 @@ from views.forum import getForumByShortName
 def countPostInThread(cursor,idThread):
     cursor.execute('''SELECT COUNT(*)
                       FROM Post
-                      WHERE idThread = %d AND isDeleted = false
+                      WHERE idThread = %d AND isDeleted = 0
                    ''' % idThread)
     return cursor.fetchone()[0]  
 
@@ -258,11 +258,14 @@ def removeThread(request):#POST #удалил JOIN к POST  - надо испр�
     POST = json.loads(request.body)
     idThread = int(POST['thread'])
 
-    cursor.execute('''UPDATE Thread JOIN Post
-                                    ON Post.idThread = Thread.idThread
-                      SET Thread.isDeleted = 1,
-                          Post.isDeleted = 1
-                      WHERE Thread.idThread = %d
+    cursor.execute('''UPDATE Thread
+                      SET isDeleted = 1
+                      WHERE idThread = %d
+                   ''' %idThread )
+
+    cursor.execute('''UPDATE Post
+                      SET isDeleted = 1
+                      WHERE idThread = %d
                    ''' %idThread )
 
     code = 0
@@ -278,11 +281,14 @@ def restoreThread(request):#POST
     POST = json.loads(request.body)
     idThread = int(POST['thread'])
 
-    cursor.execute('''UPDATE Thread JOIN Post
-                                    ON Post.idThread = Thread.idThread
-                      SET Thread.isDeleted = 0,
-                          Post.isDeleted = 0
-                      WHERE Thread.idThread = %d
+    cursor.execute('''UPDATE Thread
+                      SET isDeleted = 0
+                      WHERE idThread = %d
+                   ''' %idThread )
+
+    cursor.execute('''UPDATE Post
+                      SET isDeleted = 0
+                      WHERE idThread = %d
                    ''' %idThread )
     code = 0
     response = { "code": code, "response": POST }

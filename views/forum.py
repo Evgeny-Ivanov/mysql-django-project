@@ -11,6 +11,7 @@ from views.user import getFollowing
 from views.user import getSubscriptions,getUserByEmail
 
 
+
 def countPostInThread(cursor,idThread):
     cursor.execute('''SELECT COUNT(*)
                       FROM Post
@@ -137,8 +138,7 @@ def listUsersInForum(request):#вроде работает, но вывод foll
     response = json.dumps(response)
 
     return HttpResponse(response,content_type="application/json")
-    
-    from django.http import JsonResponse
+
 
 def listThreadsInForum(request):
     cursor = connection.cursor()
@@ -177,6 +177,9 @@ def listThreadsInForum(request):
     for thread in threads:
         if 'user' in related:
             user = getUserByEmail(cursor,thread['user'])[0]
+            user.update({'subscriptions':getSubscriptions(cursor,user['email'])})
+            user.update({'following':getFollowing(cursor,user['email'])})
+            user.update({'followers':getFollowers(cursor,user['email'])})
             thread.update({'user': user})
 
         if 'forum' in related:
@@ -187,9 +190,9 @@ def listThreadsInForum(request):
         thread.update({"posts": countPostInThread(cursor,thread['id'])})
 
     code = 0
-    responce = { "code": code, "response": threads }
-    responce = json.dumps(responce)
-    return HttpResponse(responce,content_type="application/json; charset=ascii")
+    response = { "code": code, "response": threads }
+    response = json.dumps(response,ensure_ascii=False, encoding='utf8')
+    return HttpResponse(response,content_type="application/json")
 
 def listPostsInForum(request):
     cursor = connection.cursor()
@@ -225,6 +228,9 @@ def listPostsInForum(request):
     for post in posts:
         if 'user' in related:
             user = getUserByEmail(cursor,post['user'])[0]
+            user.update({'subscriptions':getSubscriptions(cursor,user['email'])})
+            user.update({'following':getFollowing(cursor,user['email'])})
+            user.update({'followers':getFollowers(cursor,user['email'])})
             post.update({'user': user})
 
         if 'forum' in related:
@@ -244,7 +250,6 @@ def listPostsInForum(request):
 
 
     code = 0
-    responce = { "code": code, "response": posts }
-    responce = json.dumps(responce)
-
-    return HttpResponse(responce,content_type="application/json")
+    response = { "code": code, "response": posts }
+    response = json.dumps(response,ensure_ascii=False, encoding='utf8')
+    return HttpResponse(response,content_type="application/json")
