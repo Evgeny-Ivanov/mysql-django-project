@@ -1,12 +1,12 @@
 CONFIG = {
         'mode': 'wsgi',
-        'working_dir': '/home/stalker/ask_ivanov/ask_ivanov',
+        'working_dir': '/home/tpadmin/MySQLProject/MySQLProject',
         'user': 'www-data',
         'group': 'www-data',
         'args': (
-                '--bind=127.0.0.1:8002',
-       		'--workers=16',
-       		'--timeout=60',
+                '--bind=127.0.0.1:8888',
+       		    '--workers=16',
+       		    '--timeout=60',
                 'wsgi:application',
         ),
 }
