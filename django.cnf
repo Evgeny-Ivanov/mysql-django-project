@@ -1,0 +1,12 @@
+CONFIG = {
+        'mode': 'wsgi',
+        'working_dir': '/home/stalker/ask_ivanov/ask_ivanov',
+        'user': 'www-data',
+        'group': 'www-data',
+        'args': (
+                '--bind=127.0.0.1:8002',
+       		'--workers=16',
+       		'--timeout=60',
+                'wsgi:application',
+        ),
+}
