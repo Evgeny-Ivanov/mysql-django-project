@@ -58,9 +58,8 @@ def insertForum(request):#insertForum?name=Forum With Sufficiently Large Name3&s
     requestCopy = request.GET.copy()
     requestCopy.__setitem__('id',idForum)
     code = 0
-    responce = { "code": code, "response": requestCopy }
+    responce = { "code": code, "response": getForumByShortName(cursor,shortName)[0] }#если в responce подавать requestCopy то нагрузочный тест не проходит
     responce = json.dumps(responce)
-
     return HttpResponse(responce,content_type="application/json")
 
 

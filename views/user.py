@@ -178,6 +178,7 @@ def detailsUser(request):
 
 @csrf_exempt
 def followUser(request):#POST
+    #выскочило 4 пятисотки 
     cursor = connection.cursor()
 
     POST = json.loads(request.body)
