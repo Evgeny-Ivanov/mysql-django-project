@@ -12,23 +12,23 @@ from views.user import getSubscriptions,getUserByEmail
 
 
 
-def countPostInThread(cursor,idThread):
-    cursor.execute('''SELECT COUNT(*)
+def countPostInThread(cursor,idThread):#Post(idThread,isDeleted)
+    cursor.execute('''SELECT COUNT(idPost)
                       FROM Post
                       WHERE idThread = %d AND isDeleted = false
                    ''' % idThread)
     return cursor.fetchone()[0]  
 
 
-def countPostInForum(cursor,forum):
-    cursor.execute('''SELECT COUNT(*)
+def countPostInForum(cursor,forum):#Post(forum,isDeleted)
+    cursor.execute('''SELECT COUNT(idPost)
                       FROM Post
                       WHERE forum = '%s' AND isDeleted = false
                    ''' % forum)
     return cursor.fetchone()[0]  
 
 
-def getForumByShortName(cursor,shortName):
+def getForumByShortName(cursor,shortName):#Forum(short_name)
     cursor.execute('''SELECT idForum AS id,name,short_name,user                      
                       FROM Forum
                       WHERE short_name = '%s'
@@ -36,7 +36,7 @@ def getForumByShortName(cursor,shortName):
     return dictfetchall(cursor)
 
 @csrf_exempt
-def insertForum(request):#insertForum?name=Forum With Sufficiently Large Name3&short_name=forumwithsufficientlylargename3&user=example3@mail.ru
+def insertForum(request):#Forum(short_name,idForum) - покрывающий
     cursor = connection.cursor()
 
     POST = json.loads(request.body)
@@ -63,7 +63,7 @@ def insertForum(request):#insertForum?name=Forum With Sufficiently Large Name3&s
     return HttpResponse(responce,content_type="application/json")
 
 
-def detailsForum(request):#GET
+def detailsForum(request):#
     cursor = connection.cursor()
 
     shortName = request.GET['forum']
@@ -78,8 +78,7 @@ def detailsForum(request):#GET
 
     if 'user' in related:
         email = responce.get('user','')
-        responceDetailsUser = DetailsUser(cursor,email)
-        user = responceDetailsUser["response"]
+        user = DetailsUser(cursor,email)
         responce.update({'user':user})
 
     code = 0
@@ -88,8 +87,9 @@ def detailsForum(request):#GET
     return HttpResponse(responce,content_type="application/json")
 
 
-
-def listUsersInForum(request):#вроде работает, но вывод followers,following,subscriptions нужно поменять(выводятся как в массиве)
+#User(name,idUser) - ICP Post(forum,user) - для JOIN 
+#возможно нужно добавить STRAIGHT_JOIN
+def listUsersInForum(request):
     cursor = connection.cursor()
 
     shortName = request.GET["forum"]
@@ -103,7 +103,7 @@ def listUsersInForum(request):#вроде работает, но вывод foll
         since_id = int(since_id)
 
     query = '''SELECT DISTINCT User.email,User.about,User.idUser AS id,User.isAnonymous,User.name,User.username
-               FROM Post JOIN User
+               FROM User JOIN Post
                          ON User.email = Post.user
                WHERE Post.forum = '%s'
             ''' % (shortName)
@@ -121,13 +121,11 @@ def listUsersInForum(request):#вроде работает, но вывод foll
 
     for user in users:
         followers = getFollowers(cursor,user['email'])
-        user.update({'followers': followers})
-
         following = getFollowing(cursor,user['email'])
-        user.update({'following': following})
-
-        subscriptions = getSubscriptions(cursor,user['email'])
-        user.update({'subscriptions': subscriptions})        
+        subscriptions = getSubscriptions(cursor,user['email'])  
+        user.update({'following': following,
+                     'followers': followers,
+                     'subscriptions': subscriptions})     
 
     #нужно видимо хранить в Post и idForum
     #получаем массив мыассивов пользователей, теперь надо как то составить ответ 
@@ -135,7 +133,6 @@ def listUsersInForum(request):#вроде работает, но вывод foll
     code = 0
     response = { "code": code, "response": users }
     response = json.dumps(response)
-
     return HttpResponse(response,content_type="application/json")
 
 
@@ -144,16 +141,12 @@ def listThreadsInForum(request):
 
     shortName = request.GET['forum']
     since = request.GET.get('since',None)#дата треды старше которой нам нужны
-    #import datetime
-    #if since is not None:
-    #   since = datetime.datetime.strptime(since, "%Y-%m-%d %H:%M:%S")
     limit = request.GET.get('limit',None)
     if limit is not None:
         limit = int(limit)
     order = request.GET.get('order','DESC')
     related = request.GET.getlist('related',[])#массив Possible values: ['user', 'forum']. Default: []
 
-    #что такое posts и points?
     query = '''SELECT CAST(Thread.dateThread AS CHAR) AS `date`,idThread AS id,isClosed,isDeleted,
                       message,slug,title,Thread.user,Thread.forum,likes - dislikes AS points,likes,dislikes
                FROM Forum JOIN Thread
@@ -161,7 +154,7 @@ def listThreadsInForum(request):
                WHERE Forum.short_name = '%s'
             '''%(shortName,)
 
-    if since is not None:#удивительно но работает
+    if since is not None:
         query += "AND `dateThread` >= '%s' "%since
 
     if order is not None:
