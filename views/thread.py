@@ -9,7 +9,7 @@ from views.forum import getForumByShortName
 
 
 def countPostInThread(cursor,idThread):
-    cursor.execute('''SELECT COUNT(*)
+    cursor.execute('''SELECT COUNT(idPost)
                       FROM Post
                       WHERE idThread = %d AND isDeleted = 0
                    ''' % idThread)
@@ -29,12 +29,9 @@ def getThreadById(cursor,idThread):
 
 #{"forum": "forum1", "title": "Thread With Sufficiently Large Title", "isClosed": true, "user": "example3@mail.ru", "date": "2014-01-01 00:00:01", "message": "hey hey hey hey!", "slug": "Threadwithsufficientlylargetitle", "isDeleted": true}
 
-@csrf_exempt
+@csrf_exempt#что быстрее - AST_INSERT_ID() или SELECT id WHERE ?
 def insertThread(request):
     cursor = connection.cursor()
-    #Тред везде индентефицируется по id => возможно(????)
-    #нужно следить что бы не было ошибок во избежание произвольного автоинкементирования
-    #возможно нужно вообще убрать автоикремент 
 
     POST = json.loads(request.body)
     forum = POST["forum"]
@@ -73,7 +70,7 @@ def closeThread(request):
     idThread = POST["thread"]
     idThread = int(idThread)
     cursor.execute('''UPDATE Thread
-                      SET isClosed = true#возможно надо fasle
+                      SET isClosed = true#возможно надо false
                       WHERE idThread = %d
                    ''' % (idThread,))
 

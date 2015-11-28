@@ -1,0 +1,10 @@
+Performing system checks...
+
+System check identified no issues (0 silenced).
+
+You have unapplied migrations; your app may not work properly until they are applied.
+Run 'python manage.py migrate' to apply them.
+November 28, 2015 - 15:28:40
+Django version 1.8.2, using settings 'MySQLProject.settings'
+Starting development server at http://127.0.0.1:8888/
+Quit the server with CONTROL-C.

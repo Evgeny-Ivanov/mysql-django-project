@@ -7,7 +7,7 @@ from views.ancillary import getBollean,dictfetchall,responseErrorCode
 from views.user import getUserByEmail
 from views.thread import getThreadById
 from views.forum import getForumByShortName
-
+#вроде все сделано - но надо проверить вызывается ли insertPost
 
 @csrf_exempt
 def insertPost(request):
@@ -94,7 +94,7 @@ def insertPost(request):
     responce = json.dumps(responce)
     return HttpResponse(responce,content_type="application/json")
 
-def getPostById(cursor,idPost):
+def getPostById(cursor,idPost):#Post(idPost)
     cursor.execute('''SELECT idPost AS id,forum,idThread AS thread,Post.user,parent,CAST(datePost AS CHAR) AS `date`,
                              message,isEdited,isDeleted,isSpam,isHighlighted,isApproved,likes,dislikes,likes-dislikes AS points
                       FROM Post
@@ -128,13 +128,13 @@ def detailsPost(request):
     response = json.dumps(response)
     return HttpResponse(response,content_type="application/json")
 
-@csrf_exempt
-def removePost(request):#POST
+@csrf_exempt#POST
+def removePost(request):#Update - Post(idPost)
     cursor = connection.cursor()
 
     POST = json.loads(request.body)
     idPost = int(POST["post"])
-    #если я буду хранить количество постов в теме то тогда надо будут обновить и тему
+    #если я буду хранить количество постов в теме то тогда надо будет обновить и тему
     cursor.execute('''UPDATE Post
                       SET isDeleted = true
                       WHERE idPost = %d
@@ -144,8 +144,8 @@ def removePost(request):#POST
     response = json.dumps(response)
     return HttpResponse(response,content_type="application/json")
 
-@csrf_exempt
-def restorePost(request):#POST
+@csrf_exempt#POST
+def restorePost(request):#Update - Post(idPost)
     cursor = connection.cursor()
 
     POST = json.loads(request.body)
@@ -160,8 +160,8 @@ def restorePost(request):#POST
     response = json.dumps(response)
     return HttpResponse(response,content_type="application/json")
 
-@csrf_exempt
-def updatePost(request):#POST
+@csrf_exempt#POST
+def updatePost(request):#Update - Post(idPost)
     cursor = connection.cursor()
 
     POST = json.loads(request.body)
@@ -179,8 +179,8 @@ def updatePost(request):#POST
     response = json.dumps(response)
     return HttpResponse(response,content_type="application/json")
 
-@csrf_exempt
-def votePost(request):#POST
+@csrf_exempt#POST
+def votePost(request):#Update - Post(idPost)
     cursor = connection.cursor()
 
     POST = json.loads(request.body)
@@ -204,7 +204,8 @@ def votePost(request):#POST
     response = json.dumps(response)
     return HttpResponse(response,content_type="application/json")
 
-def listPost(request):#GET
+#GET
+def listPost(request):#Post(forum,datePost) Post(idThread,datePost) #шикарные индексы
     cursor = connection.cursor()
 
     forum = request.GET.get('forum',None)
@@ -222,13 +223,12 @@ def listPost(request):#GET
                        isEdited,isDeleted,isSpam,isHighlighted,isApproved,likes,dislikes,points
                FROM Post 
             '''
-
+    # что делать с тем что у нас параметры опциональные и они могут поломать индекс?
     if forum is not None:
         query += "WHERE forum = '%s'"%forum
 
     if thread is not None:
         query += "WHERE idThread = %d "%thread
-
 
     if since is not None:
         query += "AND `datePost` >= '%s' "%since

@@ -6,7 +6,7 @@ import json
 from views.ancillary import dictfetchall
 from views.ancillary import getBollean,helperQuotes
 from django.http import JsonResponse
-
+#вроде все сделано - но ICP ?
 
 
 def getFFS(cursor,email):
@@ -267,14 +267,7 @@ def listFollowersUser(request):#список подпищиков
     users = dictfetchall(cursor)
 
     for user in users:
-        following = getFollowing(cursor,user["email"])
-        followers = getFollowers(cursor,user["email"])
-        subscriptions = getSubscriptions(cursor,user["email"])
-        user.update({
-              'following': following,
-              'followers': followers,
-              'subscriptions': subscriptions
-          })
+        user.update(getFFS(cursor,user["email"]))
 
 
     code = 0
@@ -312,14 +305,7 @@ def listFollowingUser(request):
     users = dictfetchall(cursor)
 
     for user in users:
-        following = getFollowing(cursor,user["email"])
-        followers = getFollowers(cursor,user["email"])
-        subscriptions = getSubscriptions(cursor,user["email"])
-        user.update({
-              'following': following,
-              'followers': followers,
-              'subscriptions': subscriptions
-          })
+        user.update(getFFS(cursor,user["email"]))
 
     code = 0
     response = { "code": code, "response":users }
