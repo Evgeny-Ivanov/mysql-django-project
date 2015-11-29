@@ -45,7 +45,7 @@ def insertForum(request):#Forum(short_name,idForum) - покрывающий
     shortName = POST["short_name"]
     email = POST["user"]#user = email
 
-    cursor.execute('''INSERT INTO Forum(name,short_name,user) 
+    cursor.execute('''INSERT IGNORE INTO Forum(name,short_name,user) 
                       VALUES ('%s','%s','%s');
                    ''' % (name,shortName,email,))
 

@@ -47,7 +47,7 @@ def insertThread(request):
     isDeleted = POST.get("isDeleted",0)
     isDeleted = getBollean(isDeleted)
 
-    cursor.execute('''INSERT INTO Thread(forum,user,title,slug,message,dateThread,isClosed,isDeleted) 
+    cursor.execute('''INSERT IGNORE INTO Thread(forum,user,title,slug,message,dateThread,isClosed,isDeleted) 
                       VALUES ('%s','%s','%s','%s','%s','%s','%d','%d');
                    ''' % (forum,email,title,slug,message,dateThread,isClosed,isDeleted,)) 
 

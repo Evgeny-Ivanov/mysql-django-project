@@ -3,6 +3,9 @@ MySQLProject/wsgi.pyc
 MySQLProject/urls.pyc
 MySQLProject/settings.pyc
 
+MySQLProject/local_settings.py
+logs/
+
 views/ancillary.pyc
 views/forum.pyc
 views/__init__.pyc

@@ -177,8 +177,7 @@ def followUser(request):#Insert Followers
     followerEmail = POST["follower"]
     followeeEmail = POST['followee']
 
-
-    cursor.execute('''INSERT INTO Followers
+    cursor.execute('''INSERT IGNORE INTO Followers
                       VALUES ('%s','%s')
                    ''' % (followerEmail,followeeEmail))#не наоборот ли нужно?
 
