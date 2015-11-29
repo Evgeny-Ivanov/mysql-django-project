@@ -8,14 +8,14 @@ from views.user import getUserByEmail
 from views.forum import getForumByShortName
 
 
-def countPostInThread(cursor,idThread):
+def countPostInThread(cursor,idThread):#Post(idThread,isDeleted)
     cursor.execute('''SELECT COUNT(idPost)
                       FROM Post
                       WHERE idThread = %d AND isDeleted = 0
                    ''' % idThread)
     return cursor.fetchone()[0]  
 
-def getThreadById(cursor,idThread):
+def getThreadById(cursor,idThread):#Thread(idThread)
     countPost = countPostInThread(cursor,idThread)
 
     cursor.execute('''SELECT CAST(dateThread AS CHAR) AS `date`,idThread AS id,isClosed,isDeleted,
@@ -63,14 +63,14 @@ def insertThread(request):
     return HttpResponse(responce,content_type="application/json")
 
 @csrf_exempt
-def closeThread(request):
+def closeThread(request):#Thread(idThread)
     cursor = connection.cursor()
 
     POST = json.loads(request.body)
     idThread = POST["thread"]
     idThread = int(idThread)
     cursor.execute('''UPDATE Thread
-                      SET isClosed = true#возможно надо false
+                      SET isClosed = true
                       WHERE idThread = %d
                    ''' % (idThread,))
 
@@ -80,7 +80,7 @@ def closeThread(request):
     return HttpResponse(responce,content_type="application/json")
 
 @csrf_exempt
-def openThread(request):
+def openThread(request):#Thread(idThread)
     cursor = connection.cursor()
 
     POST = json.loads(request.body)
@@ -88,7 +88,7 @@ def openThread(request):
     idThread = int(idThread)
     
     cursor.execute('''UPDATE Thread
-                      SET isClosed = false#возможно надо true
+                      SET isClosed = false
                       WHERE idThread = %d
                    ''' % (idThread,))
 
@@ -124,7 +124,7 @@ def detailsThread(request):#GET
     return HttpResponse(response,content_type="application/json")
 
 @csrf_exempt
-def voteThread(request):#POST
+def voteThread(request):#Thread(idThread)
     cursor = connection.cursor()
 
     POST = json.loads(request.body)
@@ -149,7 +149,7 @@ def voteThread(request):#POST
     return HttpResponse(response,content_type="application/json")
 
 @csrf_exempt
-def updateThread(request):#POST
+def updateThread(request):#Thread(idThread)
     cursor = connection.cursor()
 
     POST = json.loads(request.body)
@@ -186,7 +186,7 @@ def subscribeThread(request):#POST
     return HttpResponse(response,content_type="application/json")
 
 @csrf_exempt
-def unsubscribeThread(request):#POST
+def unsubscribeThread(request):#Subscriptions(idThread,user)
     cursor = connection.cursor()
 
     POST = json.loads(request.body)
@@ -201,7 +201,8 @@ def unsubscribeThread(request):#POST
     response = json.dumps(response)
     return HttpResponse(response,content_type="application/json")
 
-def listThread(request):#GET #вроде работает, но на работоспособность особо не проверял (лень)
+#Thread(forum,dateThread) и Thread(user,dateThread) - шикарные индексы
+def listThread(request):#GET 
     cursor = connection.cursor()
 
     #Requried forum or user
@@ -293,9 +294,7 @@ def restoreThread(request):#POST
 
     return HttpResponse(response,content_type="application/json")
 
-    # не реализованы:
-    #   listPosts
-
+#Post(idThread,datePost)
 def listPosts(request):#не реализован parent_tree
     cursor = connection.cursor()
     #Requried
@@ -320,7 +319,7 @@ def listPosts(request):#не реализован parent_tree
     if sort is not None:
         if sort == 'flat':
             query += "ORDER BY datePost %s"%order
-        if sort == 'tree':
+        if sort == 'tree':#видими 2 нижних метода не вызываются
             query += "ORDER BY `path` %s"%order
         if sort == 'parent_tree':#тут надо доработать
             query += ''' AND CAST( LEFT( `path`, INSTR(`path`,".")-1 ) AS INT ) > %d

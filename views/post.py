@@ -9,6 +9,18 @@ from views.thread import getThreadById
 from views.forum import getForumByShortName
 #вроде все сделано - но надо проверить вызывается ли insertPost
 
+def updateCountPost(cursor,forum,idThread,value):
+    cursor.execute('''UPDATE Forum
+                      SET posts = posts + %d
+                      WHERE short_name = "%s" 
+                   ''' % (value,forum) )
+
+    cursor.execute('''UPDATE Thread
+                      SET posts = posts + %d
+                      WHERE idThread = %d
+                   ''' % (value,idThread) ) #нужно еще будет добавить posts в схему
+
+
 @csrf_exempt
 def insertPost(request):
     cursor = connection.cursor()
@@ -43,7 +55,7 @@ def insertPost(request):
     ###########
     if parent is None:
         level = 1
-        cursor.execute('''SELECT COUNT(*) + 1
+        cursor.execute('''SELECT COUNT(idPost) + 1
                           FROM Post 
                           WHERE level = %d
                        ''' %level )
@@ -57,7 +69,7 @@ def insertPost(request):
         pathResponse = cursor.fetchall()[0]
         pathParent = pathResponse[0]
         level = int(pathResponse[1])+1
-        cursor.execute('''SELECT COUNT(*)
+        cursor.execute('''SELECT COUNT(idPost)
                           FROM Post
                           WHERE level = %d AND parent = %d
                        ''' %(level,parent))
@@ -78,7 +90,9 @@ def insertPost(request):
                           VALUES          ( '%s',    '%d',  '%s',    '%s'  ,  '%s'     ,'%d'      ,'%d'  , '%d'   ,   '%d'       ,    '%d'    , '%s'   , '%s',   %d );
                        '''              % (forum, idThread, email, datePost, message, isEdited, isDeleted, isSpam,  isHighlighted,  isApproved, parent , path ,  level ))
 
-   
+    #обновляю количество постов в форуме и в теме
+    updateCountPost(cursor,forum,idThread,1)
+
     cursor.execute('''SELECT LAST_INSERT_ID();
                    ''')
     idPost = cursor.fetchone()[0]
@@ -134,11 +148,22 @@ def removePost(request):#Update - Post(idPost)
 
     POST = json.loads(request.body)
     idPost = int(POST["post"])
-    #если я буду хранить количество постов в теме то тогда надо будет обновить и тему
+    
     cursor.execute('''UPDATE Post
                       SET isDeleted = true
                       WHERE idPost = %d
                    ''' % idPost )
+
+    cursor.execute('''SELECT forum,idThread
+                      FROM Post
+                      WHERE idPost = %d
+                   ''' % idPost )
+    values = cursor.fetchone()
+    forum = values[0]
+    idThread = values[1]
+
+    updateCountPost(cursor,forum,idThread,-1)
+
     code = 0
     response = { "code": code, "response": {"post":idPost} }
     response = json.dumps(response)
@@ -150,11 +175,22 @@ def restorePost(request):#Update - Post(idPost)
 
     POST = json.loads(request.body)
     idPost = int(POST["post"])
-    #если я буду хранить количество постов в теме то тогда надо будут обновить и тему
+
     cursor.execute('''UPDATE Post
                       SET isDeleted = false
                       WHERE idPost = %d
                    ''' % idPost )
+
+    cursor.execute('''SELECT forum,idThread
+                      FROM Post
+                      WHERE idPost = %d
+                   ''' % idPost )
+    values = cursor.fetchone()
+    forum = values[0]
+    idThread = values[1]
+
+    updateCountPost(cursor,forum,idThread,1)
+
     code = 0
     response = { "code": code, "response": {"post":idPost} }
     response = json.dumps(response)

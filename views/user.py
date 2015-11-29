@@ -321,7 +321,7 @@ def listFollowingUser(request):
 #ORDER BY datePost 
 #LIMIT 85
 
-#Post(user,datePost) - asc ??? 
+#Post(user,datePost)
 def listPostsUser(request):
     cursor = connection.cursor()
 

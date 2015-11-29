@@ -87,7 +87,7 @@ def detailsForum(request):#Forum(short_name)
     return HttpResponse(responce,content_type="application/json")
 
 
-#?????????????????????????
+
 #User(name,idUser) - ICP Post(forum,user) - для JOIN 
 #возможно нужно добавить STRAIGHT_JOIN
 def listUsersInForum(request):
@@ -103,19 +103,18 @@ def listUsersInForum(request):
     if since_id is not None:
         since_id = int(since_id)
 
-    #оптимизация mysql - DISTINCT преобразовывается к GROUP BY 
-    #можно убрать DISTINCT - за место него Group By только по email
-    query = '''SELECT DISTINCT User.email,User.about,User.idUser AS id,User.isAnonymous,User.name,User.username
-               FROM User JOIN Post
+    query = '''SELECT User.email,User.about,User.idUser AS id,User.isAnonymous,User.name,User.username
+               FROM User FORCE INDEX(name_idUser) JOIN Post FORCE INDEX (forum_user) 
                          ON User.email = Post.user
                WHERE Post.forum = '%s'
             ''' % (shortName)
-#EXPLAIN SELECT User.email,User.about,User.idUser AS id,User.isAnonymous,User.name,User.username  FROM User JOIN Post  ON User.email = Post.user WHERE Post.forum = 'zdfdfxcv' AND User.idUser >= 10  GROUP BY User.email  ORDER BY User.name LIMIT 5;
+
 
     if since_id is not None:
         query += " AND User.idUser >= %d "%(since_id)
 
-    query += "ORDER BY User.name %s "%order
+    query += "GROUP BY name,idUser "#хак за место DISTINCT
+    query += "ORDER BY name %s ,idUser %s"%(order,order)
 
     if limit is not None:
         query += " LIMIT %d"%(limit)   
@@ -235,12 +234,3 @@ def listPostsInForum(request):
     response = { "code": code, "response": posts }
     response = json.dumps(response,ensure_ascii=False, encoding='utf8')
     return HttpResponse(response,content_type="application/json")
-
-
-               #SELECT  idPost AS id,forum,idThread AS thread,user,parent,CAST(datePost AS CHAR) AS `date`,message,
-               #        isEdited,isDeleted,isSpam,isHighlighted,isApproved,likes,dislikes, likes - dislikes AS points
-               #FROM Post
-               #WHERE forum = "sdfsdfasdf"
-               #AND `datePost` >= 2014-01-01+00%3A00%3A00
-               #ORDER BY datePost 
-               #LIMIT 10
