@@ -12,20 +12,20 @@ from views.user import getSubscriptions,getUserByEmail,getFFS
 #вроде все сделано кроме listUsersInForum 
 
 
-def countPostInThread(cursor,idThread):#Post(idThread,isDeleted)
-    cursor.execute('''SELECT COUNT(idPost)
-                      FROM Post
-                      WHERE idThread = %d AND isDeleted = false
-                   ''' % idThread)
-    return cursor.fetchone()[0]  
+#def countPostInThread(cursor,idThread):#Post(idThread,isDeleted)
+#    cursor.execute('''SELECT COUNT(idPost)
+#                      FROM Post
+#                      WHERE idThread = %d AND isDeleted = false
+#                   ''' % idThread)
+#    return cursor.fetchone()[0]  
 
 
-def countPostInForum(cursor,forum):#Post(forum,isDeleted)
-    cursor.execute('''SELECT COUNT(idPost)
-                      FROM Post
-                      WHERE forum = '%s' AND isDeleted = false
-                   ''' % forum)
-    return cursor.fetchone()[0]  
+#def countPostInForum(cursor,forum):#Post(forum,isDeleted)
+#    cursor.execute('''SELECT COUNT(idPost)
+#                      FROM Post
+#                      WHERE forum = '%s' AND isDeleted = false
+#                   ''' % forum)
+#    return cursor.fetchone()[0]  
 
 
 def getForumByShortName(cursor,shortName):#Forum(short_name)
@@ -36,7 +36,7 @@ def getForumByShortName(cursor,shortName):#Forum(short_name)
     return dictfetchall(cursor)
 
 @csrf_exempt
-def insertForum(request):#Forum(short_name,idForum) - покрывающий
+def insertForum(request):#Forum(short_name)
     cursor = connection.cursor()
 
     POST = json.loads(request.body)
@@ -49,10 +49,8 @@ def insertForum(request):#Forum(short_name,idForum) - покрывающий
                       VALUES ('%s','%s','%s');
                    ''' % (name,shortName,email,))
 
-    cursor.execute('''SELECT idForum
-                      FROM Forum
-                      WHERE short_name = '%s';
-                   ''' % (shortName,))
+    cursor.execute('''SELECT LAST_INSERT_ID();
+                   ''')
     idForum = cursor.fetchone()[0]
 
     requestCopy = request.GET.copy()
@@ -114,7 +112,7 @@ def listUsersInForum(request):
         query += " AND User.idUser >= %d "%(since_id)
 
     query += "GROUP BY name,idUser "#хак за место DISTINCT
-    query += "ORDER BY name %s ,idUser %s"%(order,order)
+    query += "ORDER BY name %s, idUser %s "%(order,order)
 
     if limit is not None:
         query += " LIMIT %d"%(limit)   
@@ -147,7 +145,7 @@ def listThreadsInForum(request):
     related = request.GET.getlist('related',[])#массив Possible values: ['user', 'forum']. Default: []
 
     query = '''SELECT CAST(dateThread AS CHAR) AS `date`,idThread AS id,isClosed,isDeleted,
-                      message,slug,title,user,forum,likes - dislikes AS points,likes,dislikes
+                      message,slug,title,user,forum,likes - dislikes AS points,likes,dislikes,posts
                FROM Thread
                WHERE forum = '%s'
             '''%(shortName,)
@@ -171,10 +169,10 @@ def listThreadsInForum(request):
 
         if 'forum' in related:
             forum = getForumByShortName(cursor,thread['forum'])[0]
-            forum.update({"posts": countPostInForum(cursor,forum['short_name'])})
+            #forum.update({"posts": countPostInForum(cursor,forum['short_name'])})
             thread.update({'forum': forum})
 
-        thread.update({"posts": countPostInThread(cursor,thread['id'])})
+        #thread.update({"posts": countPostInThread(cursor,thread['id'])})
 
     code = 0
     response = { "code": code, "response": threads }
@@ -216,17 +214,17 @@ def listPostsInForum(request):
 
         if 'forum' in related:
             forum = getForumByShortName(cursor,post["forum"])[0]
-            forum.update({"posts": countPostInForum(cursor,forum['short_name'])})
+            #forum.update({"posts": countPostInForum(cursor,forum['short_name'])})
             post.update({'forum': forum})
 
         if 'thread' in related:
             cursor.execute('''SELECT CAST(dateThread AS CHAR) AS `date`,idThread AS id,isClosed,isDeleted,
-                                     message,slug,title,user,forum,likes,dislikes,posts,likes - dislikes AS points
+                                     message,slug,title,user,forum,likes,dislikes,posts,likes - dislikes AS points,posts
                               FROM Thread
                               WHERE idThread = %d
                            '''%(post['thread'],))
             thread = dictfetchall(cursor)[0]
-            thread.update({"posts": countPostInThread(cursor,thread['id'])})
+            #thread.update({"posts": countPostInThread(cursor,thread['id'])})
             post.update({'thread': thread})
 
 

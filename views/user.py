@@ -38,7 +38,7 @@ def getFollowing(cursor,email):#Followers(user,follower) - покрывающи�
 
 def getFollowers(cursor,email):#Followers(follower,user) - покрывающий 
     cursor.execute('''SELECT user
-                      FROM Followers
+                      FROM Followers FORCE INDEX(follower_user)
                       WHERE follower = '%s'
                    ''' % (email,))
     return [item[0] for item in cursor.fetchall()]
@@ -115,7 +115,7 @@ def DetailsUser(cursor,email):#GET
 ################################
 
 
-@csrf_exempt#User(email) User(email,idUser) - покрывающий
+@csrf_exempt#User(email) 
 def insertUser(request):#Insert User
     cursor = connection.cursor()
 
@@ -142,11 +142,9 @@ def insertUser(request):#Insert User
                       VALUES ('%s',%s,%s,%s,%d);
                    ''' % (email,helperQuotes(username),helperQuotes(about),helperQuotes(name),isAnonymous,)) 
 
-    cursor.execute('''SELECT idUser
-                      FROM User
-                      WHERE email = '%s'
-                   ''' %email)
-    idUser =  cursor.fetchone()[0]
+    cursor.execute('''SELECT LAST_INSERT_ID();
+                   ''')
+    idUser = cursor.fetchone()[0]
 
     requestCopy = request.GET.copy()
     requestCopy.__setitem__('id',idUser)#setdefault()
@@ -231,13 +229,6 @@ def unfollowUser(request):#Delete Followers
     return HttpResponse(response,content_type="application/json")
 
 
-#SELECT follower as email
-#FROM Followers JOIN User 
-#              ON Followers.follower = User.email
-#WHERE user = '%s' 
-#AND User.idUser >= %d ORDER BY name %s 
-#LIMIT %d 
-
 #User(name,idUser) -?(ICP) Followers(user,follower)
 def listFollowersUser(request):#список подпищиков
     cursor = connection.cursor()
@@ -311,15 +302,6 @@ def listFollowingUser(request):
     response = json.dumps(response)
     return HttpResponse(response,content_type="application/json")
 
-
-
-#SELECT idPost AS id,forum,idThread AS thread,Post.user,parent,CAST(datePost AS CHAR) AS `date`,
-#      message,isEdited,isDeleted,isSpam,isHighlighted,isApproved,likes,dislikes,likes-dislikes AS points
-#FROM Post 
-#WHERE user = 'l0yw73d@mail.ru'
-#AND `datePost` >= '%s' desc
-#ORDER BY datePost 
-#LIMIT 85
 
 #Post(user,datePost)
 def listPostsUser(request):

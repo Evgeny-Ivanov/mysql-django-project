@@ -1,5 +1,5 @@
 -- MySQL Workbench Synchronization
--- Generated: 2015-10-20 16:22
+-- Generated: 2015-11-30 23:52
 -- Model: New Model
 -- Version: 1.0
 -- Project: Name of the project
@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS `forums`.`User` (
   `about` MEDIUMTEXT NULL DEFAULT NULL COMMENT '',
   `name` CHAR(45) NULL DEFAULT NULL COMMENT '',
   `email` CHAR(45) NOT NULL COMMENT '',
-  `isAnonymous` TINYINT(1) NULL DEFAULT 0 COMMENT '',
+  `isAnonymous` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '',
   PRIMARY KEY (`idUser`)  COMMENT '',
   UNIQUE INDEX `email_UNIQUE` (`email` ASC)  COMMENT '')
 ENGINE = InnoDB
@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS `forums`.`Forum` (
   `name` CHAR(45) NULL DEFAULT NULL COMMENT '',
   `short_name` CHAR(45) NULL DEFAULT NULL COMMENT '',
   `user` CHAR(45) NULL DEFAULT NULL COMMENT '',
+  `posts` INT(11) NOT NULL DEFAULT 0 COMMENT '',
   PRIMARY KEY (`idForum`)  COMMENT '',
   UNIQUE INDEX `name_UNIQUE` (`name` ASC)  COMMENT '',
   UNIQUE INDEX `shortName_UNIQUE` (`short_name` ASC)  COMMENT '',
@@ -50,12 +51,12 @@ CREATE TABLE IF NOT EXISTS `forums`.`Thread` (
   `slug` CHAR(45) NULL DEFAULT NULL COMMENT '',
   `message` TEXT NULL DEFAULT NULL COMMENT '',
   `dateThread` DATETIME NULL DEFAULT NULL COMMENT '',
-  `isClosed` TINYINT(1) NULL DEFAULT 0 COMMENT '',
-  `isDeleted` TINYINT(1) NULL DEFAULT 0 COMMENT '',
-  `likes` INT(11) NULL DEFAULT 0 COMMENT '',
-  `dislikes` INT(11) NULL DEFAULT 0 COMMENT '',
-  `points` INT(11) NULL DEFAULT 0 COMMENT '',
-  `posts` INT(11) NULL DEFAULT 0 COMMENT '',
+  `isClosed` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '',
+  `isDeleted` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '',
+  `likes` INT(11) NOT NULL DEFAULT 0 COMMENT '',
+  `dislikes` INT(11) NOT NULL DEFAULT 0 COMMENT '',
+  `points` INT(11) NOT NULL DEFAULT 0 COMMENT '',
+  `posts` INT(11) NOT NULL DEFAULT 0 COMMENT '',
   PRIMARY KEY (`idThread`)  COMMENT '',
   INDEX `fk_Thread_1_idx` (`user` ASC)  COMMENT '',
   INDEX `fk_Thread_2_idx` (`forum` ASC)  COMMENT '',
@@ -81,15 +82,15 @@ CREATE TABLE IF NOT EXISTS `forums`.`Post` (
   `parent` INT(11) NULL DEFAULT NULL COMMENT '',
   `datePost` DATETIME NULL DEFAULT NULL COMMENT '',
   `message` MEDIUMTEXT NULL DEFAULT NULL COMMENT '',
-  `isEdited` TINYINT(1) NULL DEFAULT 0 COMMENT '',
-  `isDeleted` TINYINT(1) NULL DEFAULT 0 COMMENT '',
-  `isSpam` TINYINT(1) NULL DEFAULT 0 COMMENT '',
-  `isHighlighted` TINYINT(1) NULL DEFAULT 0 COMMENT '',
-  `isApproved` TINYINT(1) NULL DEFAULT 0 COMMENT '',
-  `likes` INT(11) NULL DEFAULT 0 COMMENT '',
-  `dislikes` INT(11) NULL DEFAULT 0 COMMENT '',
-  `points` INT(11) NULL DEFAULT 0 COMMENT '',
-  `path` VARCHAR(345) NULL DEFAULT NULL COMMENT '',
+  `isEdited` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '',
+  `isDeleted` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '',
+  `isSpam` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '',
+  `isHighlighted` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '',
+  `isApproved` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '',
+  `likes` INT(11) NOT NULL DEFAULT 0 COMMENT '',
+  `dislikes` INT(11) NOT NULL DEFAULT 0 COMMENT '',
+  `points` INT(11) NOT NULL DEFAULT 0 COMMENT '',
+  `path` VARCHAR(345) NOT NULL COMMENT '',
   `isRoot` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '',
   `level` INT(11) NOT NULL DEFAULT 0 COMMENT '',
   PRIMARY KEY (`idPost`)  COMMENT '',
@@ -143,7 +144,7 @@ COLLATE = utf8_general_ci;
 CREATE TABLE IF NOT EXISTS `forums`.`Subscriptions` (
   `user` CHAR(45) NOT NULL COMMENT '',
   `idThread` INT(11) NOT NULL COMMENT '',
-  PRIMARY KEY (`user`, `idThread`)  COMMENT '',
+  PRIMARY KEY (`idThread`, `user`)  COMMENT '',
   INDEX `fk_Subscriptions_2_idx` (`idThread` ASC)  COMMENT '',
   CONSTRAINT `fk_Subscriptions_1`
     FOREIGN KEY (`user`)

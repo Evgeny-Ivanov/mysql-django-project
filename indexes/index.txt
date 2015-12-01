@@ -1,0 +1,25 @@
+#User
+Followers(follower,user)
+User(name,idUser)
+Post(user,datePost)
+
+
+#Post
+Post(level,parent)
+Post(forum,datePost) 
+Post(idThread,datePost)
+#Post(idPost,`path`,level) - Покрывающий
+
+
+#Thread
+Thread(forum,dateThread) 
+Thread(user,dateThread) 
+#Post(idThread,`path`) - для tree и parent_tree  ( для parent_tree возможно не сработает)
+
+
+#Forum
+Post(forum,user)
+
+
+#Subscriptions(idThread,user)
+# - нужно таким сделать первичный ключь

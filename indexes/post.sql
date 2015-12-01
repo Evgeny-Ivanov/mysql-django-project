@@ -1,1 +1,0 @@
-ALTER TABLE Forum ADD posts INT;

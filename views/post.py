@@ -9,7 +9,7 @@ from views.thread import getThreadById
 from views.forum import getForumByShortName
 #вроде все сделано - но надо проверить вызывается ли insertPost
 
-def updateCountPost(cursor,forum,idThread,value):
+def updateCountPost(cursor,forum,idThread,value):#Forum(short_name) Thread(idThread)
     cursor.execute('''UPDATE Forum
                       SET posts = posts + %d
                       WHERE short_name = "%s" 
@@ -22,7 +22,7 @@ def updateCountPost(cursor,forum,idThread,value):
 
 
 @csrf_exempt
-def insertPost(request):
+def insertPost(request):#Post(level,parent)
     cursor = connection.cursor()
 
 
@@ -55,7 +55,7 @@ def insertPost(request):
     ###########
     if parent is None:
         level = 1
-        cursor.execute('''SELECT COUNT(idPost) + 1
+        cursor.execute('''SELECT COUNT(*) + 1
                           FROM Post 
                           WHERE level = %d
                        ''' %level )
@@ -69,7 +69,7 @@ def insertPost(request):
         pathResponse = cursor.fetchall()[0]
         pathParent = pathResponse[0]
         level = int(pathResponse[1])+1
-        cursor.execute('''SELECT COUNT(idPost)
+        cursor.execute('''SELECT COUNT(*)
                           FROM Post
                           WHERE level = %d AND parent = %d
                        ''' %(level,parent))
@@ -244,7 +244,7 @@ def votePost(request):#Update - Post(idPost)
 def listPost(request):#Post(forum,datePost) Post(idThread,datePost) #шикарные индексы
     cursor = connection.cursor()
 
-    forum = request.GET.get('forum',None)
+    forum = request.GET.get('forum',None)#приходит или форум или тема
     thread = request.GET.get('thread',None)
     if thread is not None:
         thread = int(thread)

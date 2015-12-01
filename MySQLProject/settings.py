@@ -26,6 +26,8 @@ SECRET_KEY = '_l$j)exrp1x2d1=gd=awiqofs$d#slpl%4!(17+3!^cg((i_ht'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+#ALLOWED_HOSTS = ['*']
+
 # Application definition
 
 INSTALLED_APPS = (

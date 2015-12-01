@@ -9,22 +9,22 @@ from views.forum import getForumByShortName
 
 
 def countPostInThread(cursor,idThread):#Post(idThread,isDeleted)
-    cursor.execute('''SELECT COUNT(idPost)
+    cursor.execute('''SELECT COUNT(*)
                       FROM Post
-                      WHERE idThread = %d AND isDeleted = 0
+                      WHERE idThread = %d 
                    ''' % idThread)
     return cursor.fetchone()[0]  
 
 def getThreadById(cursor,idThread):#Thread(idThread)
-    countPost = countPostInThread(cursor,idThread)
+    #countPost = countPostInThread(cursor,idThread)
 
     cursor.execute('''SELECT CAST(dateThread AS CHAR) AS `date`,idThread AS id,isClosed,isDeleted,
-                             message,slug,title,user,forum,likes,dislikes,likes-dislikes AS points
+                             message,slug,title,user,forum,likes,dislikes,likes-dislikes AS points,posts
                       FROM Thread
                       WHERE idThread = %d
                    '''%idThread )
     response = dictfetchall(cursor)
-    response[0].setdefault('posts',countPost)
+    #response[0].setdefault('posts',countPost)
     return response
 
 #{"forum": "forum1", "title": "Thread With Sufficiently Large Title", "isClosed": true, "user": "example3@mail.ru", "date": "2014-01-01 00:00:01", "message": "hey hey hey hey!", "slug": "Threadwithsufficientlylargetitle", "isDeleted": true}
@@ -240,8 +240,8 @@ def listThread(request):#GET
     cursor.execute(query)
     posts = dictfetchall(cursor)
 
-    for post in posts:
-        post.update({"posts": countPostInThread(cursor,post['id'])})
+    #for post in posts:
+    #    post.update({"posts": countPostInThread(cursor,post['id'])})
 
     code = 0
     response = { "code": code, "response": posts }
@@ -257,7 +257,7 @@ def removeThread(request):#POST #удалил JOIN к POST  - надо испр�
     idThread = int(POST['thread'])
 
     cursor.execute('''UPDATE Thread
-                      SET isDeleted = 1
+                      SET isDeleted = 1, posts = 0
                       WHERE idThread = %d
                    ''' %idThread )
 
@@ -278,16 +278,18 @@ def restoreThread(request):#POST
 
     POST = json.loads(request.body)
     idThread = int(POST['thread'])
-
+   
+    countPost = countPostInThread(cursor,idThread)
     cursor.execute('''UPDATE Thread
-                      SET isDeleted = 0
+                      SET isDeleted = 0 , posts = %d
                       WHERE idThread = %d
-                   ''' %idThread )
+                   ''' % (countPost,idThread) )
 
     cursor.execute('''UPDATE Post
                       SET isDeleted = 0
                       WHERE idThread = %d
                    ''' %idThread )
+
     code = 0
     response = { "code": code, "response": POST }
     response = json.dumps(response)
@@ -295,7 +297,7 @@ def restoreThread(request):#POST
     return HttpResponse(response,content_type="application/json")
 
 #Post(idThread,datePost)
-def listPosts(request):#не реализован parent_tree
+def listPosts(request):
     cursor = connection.cursor()
     #Requried
     thread = int(request.GET.get('thread',None))
