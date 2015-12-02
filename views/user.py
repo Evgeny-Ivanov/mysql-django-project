@@ -38,9 +38,9 @@ def getFollowing(cursor,email):#Followers(user,follower) - покрывающи�
 
 def getFollowers(cursor,email):#Followers(follower,user) - покрывающий 
     cursor.execute('''SELECT user
-                      FROM Followers FORCE INDEX(follower_user)
+                      FROM Followers
                       WHERE follower = '%s'
-                   ''' % (email,))
+                   ''' % (email,))#FORCE INDEX(follower_user)
     return [item[0] for item in cursor.fetchall()]
 
 def getSubscriptions(cursor,email):#Subscriptions(user,idThread) - покрывающий

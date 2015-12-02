@@ -53,33 +53,36 @@ def insertPost(request):#Post(level,parent)
     isSpam = getBollean(isSpam)
 
     ###########
-    if parent is None:
-        level = 1
-        cursor.execute('''SELECT COUNT(*) + 1
-                          FROM Post 
-                          WHERE level = %d
-                       ''' %level )
-        number = cursor.fetchone()[0]
-        path = str(number)
-    else:
-        cursor.execute('''SELECT `path`,level
-                          FROM Post
-                          WHERE idPost = %d
-                      ''' %parent )
-        pathResponse = cursor.fetchall()[0]
-        pathParent = pathResponse[0]
-        level = int(pathResponse[1])+1
-        cursor.execute('''SELECT COUNT(*)
-                          FROM Post
-                          WHERE level = %d AND parent = %d
-                       ''' %(level,parent))
-        countThisLevelPost = cursor.fetchone()[0]
-        countThisLevelPost = int(countThisLevelPost)
-        path = pathParent + '.' + str(countThisLevelPost+1)
+    #if parent is None:
+    #    level = 1
+    #    cursor.execute('''SELECT COUNT(*) + 1
+    #                      FROM Post 
+    #                      WHERE level = %d
+    #                   ''' %level )
+    #    number = cursor.fetchone()[0]
+    #    path = str(number)
+    #else:
+    #    cursor.execute('''SELECT `path`,level
+    #                      FROM Post
+    #                      WHERE idPost = %d
+    #                  ''' %parent )
+    #    pathResponse = cursor.fetchall()[0]
+    #    pathParent = pathResponse[0]
+    #    level = int(pathResponse[1])+1
+    #    cursor.execute('''SELECT COUNT(*)
+    #                      FROM Post
+    #                      WHERE level = %d AND parent = %d
+    #                   ''' %(level,parent))
+    #    countThisLevelPost = cursor.fetchone()[0]
+    #    countThisLevelPost = int(countThisLevelPost)
+    #    path = pathParent + '.' + str(countThisLevelPost+1)
     ##вроде работает но слишком много запросов 
     ########### path и level получены,но надо в десятичной системе -
     ########### максимум сколько можно коментариев на коментарий - 10 
     ########### нужно перевести в другую
+
+    level = 1
+    path = "1"
 
     if parent is None:
         cursor.execute('''INSERT INTO Post(forum, idThread, user, datePost, message,  isEdited, isDeleted, isSpam,  isHighlighted, isApproved , `path`,level) 

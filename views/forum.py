@@ -102,10 +102,10 @@ def listUsersInForum(request):
         since_id = int(since_id)
 
     query = '''SELECT User.email,User.about,User.idUser AS id,User.isAnonymous,User.name,User.username
-               FROM User FORCE INDEX(name_idUser) JOIN Post FORCE INDEX (forum_user) 
+               FROM User FORCE INDEX(name_idUser) JOIN Post FORCE INDEX (forum_user)
                          ON User.email = Post.user
                WHERE Post.forum = '%s'
-            ''' % (shortName)
+            ''' % (shortName)#FORCE INDEX(name_idUser) FORCE INDEX (forum_user) 
 
 
     if since_id is not None:
