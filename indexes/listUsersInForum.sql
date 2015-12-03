@@ -1,4 +1,4 @@
-
+LE
 #listUsersInForum
 SELECT DISTINCT User.email,User.about,User.idUser AS id,User.isAnonymous,User.name,User.username
 FROM User JOIN Post

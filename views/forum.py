@@ -58,6 +58,7 @@ def insertForum(request):#Forum(short_name)
     code = 0
     responce = { "code": code, "response": getForumByShortName(cursor,shortName)[0] }#если в responce подавать requestCopy то нагрузочный тест не проходит
     responce = json.dumps(responce)
+    cursor.close()
     return HttpResponse(responce,content_type="application/json")
 
 
@@ -82,6 +83,7 @@ def detailsForum(request):#Forum(short_name)
     code = 0
     responce = { "code": code, "response":responce }
     responce = json.dumps(responce)
+    cursor.close()
     return HttpResponse(responce,content_type="application/json")
 
 
@@ -101,7 +103,7 @@ def listUsersInForum(request):
     if since_id is not None:
         since_id = int(since_id)
 
-    query = '''SELECT User.email,User.about,User.idUser AS id,User.isAnonymous,User.name,User.username
+    query = '''SELECT STRAIGHT_JOIN User.email,User.about,User.idUser AS id,User.isAnonymous,User.name,User.username
                FROM User FORCE INDEX(name_idUser) JOIN Post FORCE INDEX (forum_user)
                          ON User.email = Post.user
                WHERE Post.forum = '%s'
@@ -129,6 +131,7 @@ def listUsersInForum(request):
     code = 0
     response = { "code": code, "response": users }
     response = json.dumps(response)
+    cursor.close()
     return HttpResponse(response,content_type="application/json")
 
 
@@ -177,6 +180,7 @@ def listThreadsInForum(request):
     code = 0
     response = { "code": code, "response": threads }
     response = json.dumps(response,ensure_ascii=False, encoding='utf8')
+    cursor.close()
     return HttpResponse(response,content_type="application/json")
 
 #Post(forum,datePost) - великолепный индекс Thread(idThread)
@@ -231,4 +235,5 @@ def listPostsInForum(request):
     code = 0
     response = { "code": code, "response": posts }
     response = json.dumps(response,ensure_ascii=False, encoding='utf8')
+    cursor.close()
     return HttpResponse(response,content_type="application/json")

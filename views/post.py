@@ -109,6 +109,7 @@ def insertPost(request):#Post(level,parent)
     code = 0
     responce = { "code": code, "response": requestCopy }
     responce = json.dumps(responce)
+    cursor.close()
     return HttpResponse(responce,content_type="application/json")
 
 def getPostById(cursor,idPost):#Post(idPost)
@@ -143,6 +144,7 @@ def detailsPost(request):
     code = 0
     response = { "code": code, "response": post }
     response = json.dumps(response)
+    cursor.close()
     return HttpResponse(response,content_type="application/json")
 
 @csrf_exempt#POST
@@ -170,6 +172,7 @@ def removePost(request):#Update - Post(idPost)
     code = 0
     response = { "code": code, "response": {"post":idPost} }
     response = json.dumps(response)
+    cursor.close()
     return HttpResponse(response,content_type="application/json")
 
 @csrf_exempt#POST
@@ -197,6 +200,7 @@ def restorePost(request):#Update - Post(idPost)
     code = 0
     response = { "code": code, "response": {"post":idPost} }
     response = json.dumps(response)
+    cursor.close()
     return HttpResponse(response,content_type="application/json")
 
 @csrf_exempt#POST
@@ -216,6 +220,7 @@ def updatePost(request):#Update - Post(idPost)
     code = 0
     response = { "code": code, "response": response }
     response = json.dumps(response)
+    cursor.close()
     return HttpResponse(response,content_type="application/json")
 
 @csrf_exempt#POST
@@ -241,6 +246,7 @@ def votePost(request):#Update - Post(idPost)
     code = 0
     response = { "code": code, "response": response }
     response = json.dumps(response)
+    cursor.close()
     return HttpResponse(response,content_type="application/json")
 
 #GET
@@ -284,5 +290,5 @@ def listPost(request):#Post(forum,datePost) Post(idThread,datePost) #шикар�
     code = 0
     response = { "code": code, "response": posts }
     response = json.dumps(response)
-
+    cursor.close()
     return HttpResponse(response,content_type="application/json")

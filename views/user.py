@@ -38,7 +38,7 @@ def getFollowing(cursor,email):#Followers(user,follower) - покрывающи�
 
 def getFollowers(cursor,email):#Followers(follower,user) - покрывающий 
     cursor.execute('''SELECT user
-                      FROM Followers
+                      FROM Followers FORCE INDEX(follower_user)
                       WHERE follower = '%s'
                    ''' % (email,))#FORCE INDEX(follower_user)
     return [item[0] for item in cursor.fetchall()]
@@ -151,6 +151,7 @@ def insertUser(request):#Insert User
     code = 0
     responce = { "code": code, "response": requestCopy }
     responce = json.dumps(responce)
+    cursor.close()
     return HttpResponse(responce,content_type="application/json")
 
 
@@ -164,6 +165,7 @@ def detailsUser(request):
                  "response": response
     }
     response = json.dumps(response)
+    cursor.close()
     return HttpResponse(response,content_type="application/json")
 
 @csrf_exempt
@@ -184,6 +186,7 @@ def followUser(request):#Insert Followers
                  "response": response
     }
     response = json.dumps(response)
+    cursor.close()
     return HttpResponse(response,content_type="application/json")
 
 @csrf_exempt
@@ -207,6 +210,7 @@ def updateProfile(request):# Update User
                  "response": response
     }
     response = json.dumps(response)
+    cursor.close()
     return HttpResponse(response,content_type="application/json")
 
 @csrf_exempt
@@ -226,6 +230,7 @@ def unfollowUser(request):#Delete Followers
                  "response": response
     }
     response = json.dumps(response)
+    cursor.close()
     return HttpResponse(response,content_type="application/json")
 
 
@@ -263,6 +268,7 @@ def listFollowersUser(request):#список подпищиков
     code = 0
     responce = { "code": code, "response":users }
     responce = json.dumps(responce)
+    cursor.close()
     return HttpResponse(responce,content_type="application/json")
 
 #User(name,idUser) -?(ICP) Followers(follower,user)
@@ -300,6 +306,7 @@ def listFollowingUser(request):
     code = 0
     response = { "code": code, "response":users }
     response = json.dumps(response)
+    cursor.close()
     return HttpResponse(response,content_type="application/json")
 
 
@@ -332,4 +339,5 @@ def listPostsUser(request):
     code = 0
     response = { "code": code, "response":response }
     response = json.dumps(response,ensure_ascii=False, encoding='utf8')
+    cursor.close()
     return HttpResponse(response,content_type="application/json")

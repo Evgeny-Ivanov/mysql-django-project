@@ -60,6 +60,7 @@ def insertThread(request):
     code = 0
     responce = { "code": code, "response": requestCopy }
     responce = json.dumps(responce)
+    cursor.close()
     return HttpResponse(responce,content_type="application/json")
 
 @csrf_exempt
@@ -77,6 +78,7 @@ def closeThread(request):#Thread(idThread)
     code = 0
     responce = { "code": code, "response": {"thread":idThread,}}
     responce = json.dumps(responce)
+    cursor.close()
     return HttpResponse(responce,content_type="application/json")
 
 @csrf_exempt
@@ -95,6 +97,7 @@ def openThread(request):#Thread(idThread)
     code = 0
     responce = { "code": code, "response": {"thread":idThread,}}
     responce = json.dumps(responce)
+    cursor.close()
     return HttpResponse(responce,content_type="application/json")
 
 
@@ -121,6 +124,7 @@ def detailsThread(request):#GET
     code = 0
     response = { "code": code, "response": thread}
     response = json.dumps(response)
+    cursor.close()
     return HttpResponse(response,content_type="application/json")
 
 @csrf_exempt
@@ -146,6 +150,7 @@ def voteThread(request):#Thread(idThread)
     code = 0
     response = { "code": code, "response": response }
     response = json.dumps(response)
+    cursor.close()
     return HttpResponse(response,content_type="application/json")
 
 @csrf_exempt
@@ -167,6 +172,7 @@ def updateThread(request):#Thread(idThread)
     code = 0
     response = { "code": code, "response": response }
     response = json.dumps(response)
+    cursor.close()
     return HttpResponse(response,content_type="application/json")
 
 @csrf_exempt
@@ -183,6 +189,7 @@ def subscribeThread(request):#POST
     code = 0
     response = { "code": code, "response": POST }
     response = json.dumps(response)
+    cursor.close()
     return HttpResponse(response,content_type="application/json")
 
 @csrf_exempt
@@ -199,6 +206,7 @@ def unsubscribeThread(request):#Subscriptions(idThread,user)
     code = 0
     response = { "code": code, "response": POST }
     response = json.dumps(response)
+    cursor.close()
     return HttpResponse(response,content_type="application/json")
 
 #Thread(forum,dateThread) и Thread(user,dateThread) - шикарные индексы
@@ -246,7 +254,7 @@ def listThread(request):#GET
     code = 0
     response = { "code": code, "response": posts }
     response = json.dumps(response)
-
+    cursor.close()
     return HttpResponse(response,content_type="application/json")
 
 @csrf_exempt
@@ -269,7 +277,7 @@ def removeThread(request):#POST #удалил JOIN к POST  - надо испр�
     code = 0
     response = { "code": code, "response": POST }
     response = json.dumps(response)
-
+    cursor.close()
     return HttpResponse(response,content_type="application/json")
 
 @csrf_exempt
@@ -293,7 +301,7 @@ def restoreThread(request):#POST
     code = 0
     response = { "code": code, "response": POST }
     response = json.dumps(response)
-
+    cursor.close()
     return HttpResponse(response,content_type="application/json")
 
 #Post(idThread,datePost)
@@ -336,6 +344,6 @@ def listPosts(request):
     code = 0
     response = { "code": code, "response": posts }
     response = json.dumps(response)
-
+    cursor.close()
     return HttpResponse(response,content_type="application/json")
   

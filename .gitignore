@@ -5,6 +5,7 @@ MySQLProject/settings.pyc
 
 MySQLProject/local_settings.py
 logs/
+dump.sql
 
 views/ancillary.pyc
 views/forum.pyc
